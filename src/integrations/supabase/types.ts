@@ -23,6 +23,7 @@ export type Database = {
           estimated_time: string | null
           gamemode_id: string
           id: string
+          metric_type: string
           name: string
           rules: string | null
           slug: string
@@ -36,6 +37,7 @@ export type Database = {
           estimated_time?: string | null
           gamemode_id: string
           id?: string
+          metric_type?: string
           name: string
           rules?: string | null
           slug: string
@@ -49,6 +51,7 @@ export type Database = {
           estimated_time?: string | null
           gamemode_id?: string
           id?: string
+          metric_type?: string
           name?: string
           rules?: string | null
           slug?: string

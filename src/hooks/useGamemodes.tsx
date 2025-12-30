@@ -11,6 +11,7 @@ export interface Category {
   timing_method: string | null;
   difficulty: string | null;
   estimated_time: string | null;
+  metric_type: 'time' | 'count' | 'score';
   display_order: number;
   created_at: string;
 }

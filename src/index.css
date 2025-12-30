@@ -2,57 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LifeBoat Leaderboards - speedrun.com inspired dark theme */
+/* LifeBoat Leaderboards - Professional dark theme with blue/red accents only */
 
 @layer base {
   :root {
-    --background: 220 15% 8%;
-    --foreground: 210 20% 95%;
+    --background: 220 20% 10%;
+    --foreground: 0 0% 98%;
     
-    --card: 220 15% 11%;
-    --card-foreground: 210 20% 95%;
+    --card: 220 20% 12%;
+    --card-foreground: 0 0% 98%;
     
-    --popover: 220 15% 13%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 220 20% 12%;
+    --popover-foreground: 0 0% 98%;
     
-    --primary: 142 70% 45%;
+    --primary: 210 100% 50%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 220 15% 15%;
-    --secondary-foreground: 210 20% 85%;
+    --secondary: 220 20% 16%;
+    --secondary-foreground: 0 0% 98%;
     
-    --muted: 220 15% 18%;
-    --muted-foreground: 210 10% 55%;
+    --muted: 220 15% 20%;
+    --muted-foreground: 220 10% 60%;
     
-    --accent: 142 70% 45%;
+    --accent: 0 85% 55%;
     --accent-foreground: 0 0% 100%;
     
-    --destructive: 0 72% 51%;
+    --destructive: 0 85% 55%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 220 15% 18%;
-    --input: 220 15% 18%;
-    --ring: 142 70% 45%;
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 210 100% 50%;
     
     --radius: 0.375rem;
     
-    /* LifeBoat colors */
-    --lifeboat-green: 142 70% 45%;
-    --lifeboat-green-glow: 142 70% 55%;
-    --lifeboat-purple: 280 70% 55%;
-    --lifeboat-gold: 45 100% 50%;
-    --lifeboat-silver: 210 10% 70%;
-    --lifeboat-bronze: 30 60% 50%;
+    /* Custom semantic colors - only blue and red */
+    --color-blue: 210 100% 50%;
+    --color-blue-light: 210 100% 60%;
+    --color-blue-dark: 210 100% 40%;
+    --color-red: 0 85% 55%;
+    --color-red-light: 0 85% 65%;
+    
+    /* Rank colors */
+    --rank-gold: 45 90% 55%;
+    --rank-silver: 220 10% 70%;
+    --rank-bronze: 30 60% 50%;
     
     /* Sidebar */
-    --sidebar-background: 220 15% 8%;
-    --sidebar-foreground: 210 20% 95%;
-    --sidebar-primary: 142 70% 45%;
+    --sidebar-background: 220 20% 10%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 210 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 15%;
-    --sidebar-accent-foreground: 210 20% 95%;
-    --sidebar-border: 220 15% 18%;
-    --sidebar-ring: 142 70% 45%;
+    --sidebar-accent: 220 20% 16%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 220 15% 20%;
+    --sidebar-ring: 210 100% 50%;
   }
 }
 
@@ -74,7 +78,7 @@
 @layer components {
   /* Pill buttons - speedrun.com style */
   .pill-button {
-    @apply inline-flex items-center justify-center px-4 py-1.5 rounded-full text-sm font-medium transition-all;
+    @apply inline-flex items-center justify-center px-4 py-1.5 rounded text-sm font-medium transition-all;
     @apply bg-secondary text-muted-foreground hover:bg-muted hover:text-foreground;
   }
   
@@ -103,30 +107,29 @@
     @apply bg-secondary/50;
   }
   
-  /* Rank badges */
+  /* Rank classes */
   .rank-1 {
-    @apply text-lifeboat-gold font-bold;
+    color: hsl(var(--rank-gold));
+    font-weight: 700;
   }
   
   .rank-2 {
-    @apply text-lifeboat-silver font-semibold;
+    color: hsl(var(--rank-silver));
+    font-weight: 600;
   }
   
   .rank-3 {
-    @apply text-lifeboat-bronze font-semibold;
+    color: hsl(var(--rank-bronze));
+    font-weight: 600;
   }
   
-  /* Glow effects */
-  .glow-green {
-    @apply relative;
-    box-shadow: 0 0 20px hsl(var(--lifeboat-green) / 0.3);
+  /* User highlight row */
+  .user-highlight {
+    @apply bg-primary/10;
+    border-left: 2px solid hsl(var(--primary));
   }
   
-  .glow-green:hover {
-    box-shadow: 0 0 25px hsl(var(--lifeboat-green) / 0.4);
-  }
-  
-  /* Section headers - speedrun.com style */
+  /* Section headers */
   .section-header {
     @apply flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3 pb-2 border-b border-border;
   }
@@ -155,6 +158,16 @@
   
   .card-section-body {
     @apply p-4;
+  }
+  
+  /* Metric type styles */
+  .metric-time {
+    @apply font-mono text-primary;
+  }
+  
+  .metric-count,
+  .metric-score {
+    @apply font-bold text-primary;
   }
 }
 

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
 import { useGamemodes } from '@/hooks/useGamemodes';
-import { useSubmitRun, parseTime } from '@/hooks/useRuns';
+import { useSubmitRun, parseValue, getMetricPlaceholder, getMetricHelpText, getMetricLabel } from '@/hooks/useRuns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,19 +11,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trophy, Youtube, Clock, ArrowLeft } from 'lucide-react';
+import { Loader2, Trophy, Youtube, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
-
-const submitSchema = z.object({
-  category_id: z.string().min(1, 'Please select a category'),
-  time: z.string().min(1, 'Please enter your time'),
-  youtube_url: z.string().url('Please enter a valid URL').refine(
-    (url) => url.includes('youtube.com') || url.includes('youtu.be'),
-    'Please enter a valid YouTube URL'
-  ),
-  notes: z.string().max(500, 'Notes must be less than 500 characters').optional(),
-});
 
 export default function Submit() {
   const navigate = useNavigate();
@@ -36,7 +26,7 @@ export default function Submit() {
   const [form, setForm] = useState({
     gamemode_id: '',
     category_id: searchParams.get('category') || '',
-    time: '',
+    value: '',
     youtube_url: '',
     notes: '',
   });
@@ -62,29 +52,36 @@ export default function Submit() {
   }, [form.category_id, gamemodes]);
 
   const selectedGamemode = gamemodes?.find(g => g.id === form.gamemode_id);
+  const selectedCategory = selectedGamemode?.categories?.find(c => c.id === form.category_id);
+  const metricType = selectedCategory?.metric_type || 'time';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
 
-    const result = submitSchema.safeParse({
-      category_id: form.category_id,
-      time: form.time,
-      youtube_url: form.youtube_url,
-      notes: form.notes,
-    });
-
-    if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
-      result.error.errors.forEach((err) => {
-        if (err.path[0]) fieldErrors[err.path[0].toString()] = err.message;
-      });
-      setErrors(fieldErrors);
+    // Basic validation
+    if (!form.category_id) {
+      setErrors({ category_id: 'Please select a category' });
+      return;
+    }
+    if (!form.value) {
+      setErrors({ value: 'Please enter your record value' });
+      return;
+    }
+    
+    const youtubeSchema = z.string().url().refine(
+      (url) => url.includes('youtube.com') || url.includes('youtu.be'),
+      'Please enter a valid YouTube URL'
+    );
+    
+    const urlResult = youtubeSchema.safeParse(form.youtube_url);
+    if (!urlResult.success) {
+      setErrors({ youtube_url: 'Please enter a valid YouTube URL' });
       return;
     }
 
     try {
-      const time_ms = parseTime(form.time);
+      const time_ms = parseValue(form.value, metricType);
       
       await submitRun.mutateAsync({
         category_id: form.category_id,
@@ -94,8 +91,8 @@ export default function Submit() {
       });
 
       toast({
-        title: 'Run submitted!',
-        description: 'Your run has been submitted for verification.',
+        title: 'Record submitted!',
+        description: 'Your record has been submitted for verification.',
       });
       
       navigate(`/profile/${user?.id}`);
@@ -132,12 +129,12 @@ export default function Submit() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-primary/10 text-primary">
+              <div className="p-3 rounded-lg bg-primary/10 text-primary">
                 <Trophy className="h-6 w-6" />
               </div>
               <div>
-                <CardTitle className="font-display text-2xl">Submit a Run</CardTitle>
-                <CardDescription>Submit your speedrun for verification</CardDescription>
+                <CardTitle className="font-display text-2xl">Submit a Record</CardTitle>
+                <CardDescription>Submit your record for verification</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -145,13 +142,13 @@ export default function Submit() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Gamemode</Label>
+                  <Label>Game Mode</Label>
                   <Select
                     value={form.gamemode_id}
                     onValueChange={(value) => setForm({ ...form, gamemode_id: value, category_id: '' })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select gamemode" />
+                      <SelectValue placeholder="Select game mode" />
                     </SelectTrigger>
                     <SelectContent>
                       {gamemodes?.map((gm) => (
@@ -186,20 +183,19 @@ export default function Submit() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="time" className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Time
+                <Label htmlFor="value">
+                  {getMetricLabel(metricType)}
                 </Label>
                 <Input
-                  id="time"
-                  placeholder="e.g., 5:23.456 or 1:05:23.456"
-                  value={form.time}
-                  onChange={(e) => setForm({ ...form, time: e.target.value })}
+                  id="value"
+                  placeholder={getMetricPlaceholder(metricType)}
+                  value={form.value}
+                  onChange={(e) => setForm({ ...form, value: e.target.value })}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Format: MM:SS.mmm or H:MM:SS.mmm
+                  {getMetricHelpText(metricType)}
                 </p>
-                {errors.time && <p className="text-sm text-destructive">{errors.time}</p>}
+                {errors.value && <p className="text-sm text-destructive">{errors.value}</p>}
               </div>
 
               <div className="space-y-2">
@@ -220,21 +216,20 @@ export default function Submit() {
                 <Label htmlFor="notes">Notes (Optional)</Label>
                 <Textarea
                   id="notes"
-                  placeholder="Any additional details about your run..."
+                  placeholder="Any additional details about your record..."
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   rows={3}
                 />
-                {errors.notes && <p className="text-sm text-destructive">{errors.notes}</p>}
               </div>
 
               <Button 
                 type="submit" 
-                className="w-full glow-green" 
+                className="w-full" 
                 disabled={submitRun.isPending}
               >
                 {submitRun.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Submit Run
+                Submit Record
               </Button>
             </form>
           </CardContent>

@@ -15,7 +15,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Space Grotesk', 'system-ui', 'sans-serif'],
+        display: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       colors: {
@@ -62,13 +62,19 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        lifeboat: {
-          green: "hsl(var(--lifeboat-green))",
-          "green-glow": "hsl(var(--lifeboat-green-glow))",
-          purple: "hsl(var(--lifeboat-purple))",
-          gold: "hsl(var(--lifeboat-gold))",
-          silver: "hsl(var(--lifeboat-silver))",
-          bronze: "hsl(var(--lifeboat-bronze))",
+        blue: {
+          DEFAULT: "hsl(var(--color-blue))",
+          light: "hsl(var(--color-blue-light))",
+          dark: "hsl(var(--color-blue-dark))",
+        },
+        red: {
+          DEFAULT: "hsl(var(--color-red))",
+          light: "hsl(var(--color-red-light))",
+        },
+        rank: {
+          gold: "hsl(var(--rank-gold))",
+          silver: "hsl(var(--rank-silver))",
+          bronze: "hsl(var(--rank-bronze))",
         },
       },
       borderRadius: {

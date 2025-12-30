@@ -1,21 +1,30 @@
 import { useParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useGamemode, useCategory } from '@/hooks/useGamemodes';
-import { useLeaderboard, formatTime } from '@/hooks/useRuns';
+import { useLeaderboard, formatValue, getMetricLabel } from '@/hooks/useRuns';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Clock, Target, ArrowLeft, FileText, Plus, ExternalLink, Play } from 'lucide-react';
+import { Trophy, Clock, Target, ArrowLeft, FileText, Plus, Play, Timer, Hash, Star } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+
+const metricIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  time: Timer,
+  count: Hash,
+  score: Star,
+};
 
 export default function LeaderboardDetail() {
   const { gamemodeSlug, categorySlug } = useParams<{ gamemodeSlug: string; categorySlug: string }>();
   const { user } = useAuth();
   const { data: gamemode } = useGamemode(gamemodeSlug || '');
   const { data: category, isLoading: categoryLoading } = useCategory(gamemodeSlug || '', categorySlug || '');
-  const { data: runs, isLoading: runsLoading } = useLeaderboard(category?.id || '');
+  const { data: runs, isLoading: runsLoading } = useLeaderboard(
+    category?.id || '', 
+    category?.metric_type || 'time'
+  );
 
   if (categoryLoading) {
     return (
@@ -44,6 +53,10 @@ export default function LeaderboardDetail() {
       </Layout>
     );
   }
+
+  const MetricIcon = metricIcons[category.metric_type] || Timer;
+  const metricLabel = getMetricLabel(category.metric_type);
+  const isHigherBetter = category.metric_type !== 'time';
 
   return (
     <Layout>
@@ -87,7 +100,7 @@ export default function LeaderboardDetail() {
                       <tr>
                         <th className="w-12">Rank</th>
                         <th>Player</th>
-                        <th>Time</th>
+                        <th>{metricLabel}</th>
                         <th>Date</th>
                         <th className="w-12">Video</th>
                       </tr>
@@ -95,8 +108,9 @@ export default function LeaderboardDetail() {
                     <tbody>
                       {runs.map((run, index) => {
                         const rank = index + 1;
+                        const isCurrentUser = user?.id === run.user_id;
                         return (
-                          <tr key={run.id}>
+                          <tr key={run.id} className={cn(isCurrentUser && "user-highlight")}>
                             <td>
                               <span className={cn(
                                 "font-mono font-bold",
@@ -120,15 +134,18 @@ export default function LeaderboardDetail() {
                                 </Avatar>
                                 <span className="font-medium">{run.profiles?.username}</span>
                                 {run.is_world_record && (
-                                  <Badge className="bg-lifeboat-gold/20 text-lifeboat-gold text-[10px] px-1.5 py-0">
+                                  <Badge className="bg-accent/20 text-accent text-[10px] px-1.5 py-0">
                                     WR
                                   </Badge>
                                 )}
                               </Link>
                             </td>
                             <td>
-                              <span className="font-mono text-primary font-medium">
-                                {formatTime(run.time_ms)}
+                              <span className={cn(
+                                "font-mono font-medium",
+                                category.metric_type === 'time' ? "metric-time" : "metric-count"
+                              )}>
+                                {formatValue(run.time_ms, category.metric_type)}
                               </span>
                             </td>
                             <td className="text-muted-foreground text-xs">
@@ -152,7 +169,7 @@ export default function LeaderboardDetail() {
                 ) : (
                   <div className="p-8 text-center">
                     <Trophy className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
-                    <p className="text-sm text-muted-foreground mb-4">No runs submitted yet</p>
+                    <p className="text-sm text-muted-foreground mb-4">No records submitted yet</p>
                     {user ? (
                       <Link to={`/submit?category=${category.id}`}>
                         <Button size="sm">Be the first!</Button>
@@ -177,24 +194,13 @@ export default function LeaderboardDetail() {
                   <p className="text-sm text-muted-foreground">{category.description}</p>
                 )}
                 <div className="flex flex-wrap gap-2">
-                  {category.difficulty && (
-                    <Badge variant="outline" className={cn(
-                      "text-xs",
-                      category.difficulty === 'Easy' && "border-green-500/50 text-green-400",
-                      category.difficulty === 'Medium' && "border-yellow-500/50 text-yellow-400",
-                      category.difficulty === 'Hard' && "border-orange-500/50 text-orange-400",
-                      category.difficulty === 'Extreme' && "border-red-500/50 text-red-400"
-                    )}>
-                      <Target className="h-3 w-3 mr-1" />
-                      {category.difficulty}
-                    </Badge>
-                  )}
-                  {category.timing_method && (
-                    <Badge variant="secondary" className="text-xs">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {category.timing_method}
-                    </Badge>
-                  )}
+                  <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                    <MetricIcon className="h-3 w-3 mr-1" />
+                    {metricLabel}
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    {isHigherBetter ? 'Higher is better' : 'Lower is better'}
+                  </Badge>
                 </div>
               </div>
             </div>
