@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useGamemodes } from '@/hooks/useGamemodes';
-import { useRecentRuns, formatTime } from '@/hooks/useRuns';
+import { useRecentRuns, formatValue } from '@/hooks/useRuns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -17,6 +17,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Crosshair,
   Trophy,
   Gamepad2,
+  Bed: Gamepad2,
 };
 
 export default function Index() {
@@ -50,9 +51,9 @@ export default function Index() {
               </Link>
               {user ? (
                 <Link to="/submit">
-                  <Button size="sm" className="glow-green">
+                  <Button size="sm">
                     <Play className="h-4 w-4 mr-2" />
-                    Submit Run
+                    Submit Record
                   </Button>
                 </Link>
               ) : (
@@ -138,7 +139,7 @@ export default function Index() {
                         <th>Game</th>
                         <th>Category</th>
                         <th>Player</th>
-                        <th>Time</th>
+                        <th>Record</th>
                         <th>Date</th>
                       </tr>
                     </thead>
@@ -174,10 +175,10 @@ export default function Index() {
                           </td>
                           <td>
                             <span className="font-mono text-primary font-medium">
-                              {formatTime(run.time_ms)}
+                              {formatValue(run.time_ms, run.categories?.metric_type || 'time')}
                             </span>
                             {run.is_world_record && (
-                              <Badge className="ml-2 bg-lifeboat-gold/20 text-lifeboat-gold text-[10px] px-1.5 py-0">
+                              <Badge className="ml-2 bg-accent/20 text-accent text-[10px] px-1.5 py-0">
                                 WR
                               </Badge>
                             )}
@@ -204,7 +205,7 @@ export default function Index() {
             {/* World Records */}
             <div className="card-section">
               <div className="card-section-header flex items-center gap-2">
-                <Trophy className="h-4 w-4 text-lifeboat-gold" />
+                <Trophy className="h-4 w-4 text-rank-gold" />
                 World Records
               </div>
               <div className="card-section-body space-y-3">
@@ -228,8 +229,8 @@ export default function Index() {
                           {run.categories?.gamemodes?.name} - {run.categories?.name}
                         </p>
                       </div>
-                      <span className="font-mono text-sm text-lifeboat-gold font-bold">
-                        {formatTime(run.time_ms)}
+                      <span className="font-mono text-sm text-rank-gold font-bold">
+                        {formatValue(run.time_ms, run.categories?.metric_type || 'time')}
                       </span>
                     </div>
                   ))
@@ -296,7 +297,7 @@ export default function Index() {
                     className="flex items-center gap-2 p-2 rounded hover:bg-secondary transition-colors text-sm"
                   >
                     <Play className="h-4 w-4 text-primary" />
-                    Submit a Run
+                    Submit a Record
                   </Link>
                 )}
               </div>

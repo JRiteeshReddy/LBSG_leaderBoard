@@ -24,6 +24,7 @@ export interface Run {
     id: string;
     name: string;
     slug: string;
+    metric_type: 'time' | 'count' | 'score';
     gamemodes?: {
       id: string;
       name: string;
@@ -32,16 +33,20 @@ export interface Run {
   };
 }
 
-export function useLeaderboard(categoryId: string, limit = 100) {
+export function useLeaderboard(categoryId: string, metricType: string = 'time', limit = 100) {
   return useQuery({
-    queryKey: ['leaderboard', categoryId, limit],
+    queryKey: ['leaderboard', categoryId, metricType, limit],
     queryFn: async () => {
+      // For time-based metrics, lower is better (ascending)
+      // For count/score metrics, higher is better (descending)
+      const ascending = metricType === 'time';
+      
       const { data: runs, error } = await supabase
         .from('runs')
         .select('*')
         .eq('category_id', categoryId)
         .eq('status', 'approved')
-        .order('time_ms', { ascending: true })
+        .order('time_ms', { ascending })
         .limit(limit);
       
       if (error) throw error;
@@ -70,7 +75,7 @@ export function useRecentRuns(limit = 10) {
     queryFn: async () => {
       const { data: runs, error } = await supabase
         .from('runs')
-        .select('*, categories(id, name, slug, gamemodes(id, name, slug))')
+        .select('*, categories(id, name, slug, metric_type, gamemodes(id, name, slug))')
         .eq('status', 'approved')
         .order('submitted_at', { ascending: false })
         .limit(limit);
@@ -101,7 +106,7 @@ export function useUserRuns(userId: string) {
         .from('runs')
         .select(`
           *,
-          categories(id, name, slug, gamemodes(id, name, slug))
+          categories(id, name, slug, metric_type, gamemodes(id, name, slug))
         `)
         .eq('user_id', userId)
         .order('submitted_at', { ascending: false });
@@ -119,7 +124,7 @@ export function usePendingRuns() {
     queryFn: async () => {
       const { data: runs, error } = await supabase
         .from('runs')
-        .select('*, categories(id, name, slug, gamemodes(id, name, slug))')
+        .select('*, categories(id, name, slug, metric_type, gamemodes(id, name, slug))')
         .eq('status', 'pending')
         .order('submitted_at', { ascending: true });
       
@@ -212,6 +217,7 @@ export function useVerifyRun() {
   });
 }
 
+// Format time in milliseconds to readable format
 export function formatTime(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
   const hours = Math.floor(totalSeconds / 3600);
@@ -225,6 +231,16 @@ export function formatTime(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
 }
 
+// Format value based on metric type
+export function formatValue(value: number, metricType: string): string {
+  if (metricType === 'time') {
+    return formatTime(value);
+  }
+  // For count and score, just format as a number
+  return value.toLocaleString();
+}
+
+// Parse time string to milliseconds
 export function parseTime(timeStr: string): number {
   const parts = timeStr.split(':').map(p => parseFloat(p));
   if (parts.length === 3) {
@@ -233,4 +249,55 @@ export function parseTime(timeStr: string): number {
     return Math.floor((parts[0] * 60 + parts[1]) * 1000);
   }
   return Math.floor(parts[0] * 1000);
+}
+
+// Parse any value based on metric type
+export function parseValue(valueStr: string, metricType: string): number {
+  if (metricType === 'time') {
+    return parseTime(valueStr);
+  }
+  // For count and score, parse as integer
+  return parseInt(valueStr.replace(/,/g, ''), 10) || 0;
+}
+
+// Get metric label
+export function getMetricLabel(metricType: string): string {
+  switch (metricType) {
+    case 'time':
+      return 'Time';
+    case 'count':
+      return 'Count';
+    case 'score':
+      return 'Score';
+    default:
+      return 'Value';
+  }
+}
+
+// Get metric placeholder
+export function getMetricPlaceholder(metricType: string): string {
+  switch (metricType) {
+    case 'time':
+      return 'e.g., 5:23.456 or 1:05:23.456';
+    case 'count':
+      return 'e.g., 25';
+    case 'score':
+      return 'e.g., 10000';
+    default:
+      return 'Enter value';
+  }
+}
+
+// Get metric help text
+export function getMetricHelpText(metricType: string): string {
+  switch (metricType) {
+    case 'time':
+      return 'Format: MM:SS.mmm or H:MM:SS.mmm (lower is better)';
+    case 'count':
+      return 'Enter the count value (higher is better)';
+    case 'score':
+      return 'Enter your score (higher is better)';
+    default:
+      return '';
+  }
 }

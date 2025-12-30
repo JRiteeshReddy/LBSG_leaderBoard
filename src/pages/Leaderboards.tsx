@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
-import { useGamemodes } from '@/hooks/useGamemodes';
-import { useRecentRuns, formatTime } from '@/hooks/useRuns';
+import { useGamemodes, Category } from '@/hooks/useGamemodes';
+import { useRecentRuns, formatValue } from '@/hooks/useRuns';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Swords, Target, Flame, Crosshair, Clock, ChevronRight, Gamepad2 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Trophy, Swords, Target, Flame, Crosshair, Clock, ChevronRight, Gamepad2, Timer, Hash, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -17,6 +16,13 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Crosshair,
   Trophy,
   Gamepad2,
+  Bed: Gamepad2,
+};
+
+const metricIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  time: Timer,
+  count: Hash,
+  score: Star,
 };
 
 export default function Leaderboards() {
@@ -51,7 +57,7 @@ export default function Leaderboards() {
               {gamemodesLoading ? (
                 <>
                   {[1, 2, 3, 4].map(i => (
-                    <Skeleton key={i} className="h-8 w-24 rounded-full" />
+                    <Skeleton key={i} className="h-8 w-24 rounded" />
                   ))}
                 </>
               ) : (
@@ -96,41 +102,32 @@ export default function Leaderboards() {
                     <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
                       {activeGamemode.categories
                         .sort((a, b) => a.display_order - b.display_order)
-                        .map((category) => (
-                          <Link
-                            key={category.id}
-                            to={`/leaderboards/${activeGamemode.slug}/${category.slug}`}
-                            className="group flex items-center justify-between p-3 rounded-lg bg-secondary hover:bg-muted transition-colors"
-                          >
-                            <div className="min-w-0">
-                              <p className="font-medium text-sm group-hover:text-primary transition-colors truncate">
-                                {category.name}
-                              </p>
-                              <div className="flex items-center gap-2 mt-1">
-                                {category.difficulty && (
+                        .map((category) => {
+                          const MetricIcon = metricIcons[category.metric_type] || Timer;
+                          return (
+                            <Link
+                              key={category.id}
+                              to={`/leaderboards/${activeGamemode.slug}/${category.slug}`}
+                              className="group flex items-center justify-between p-3 rounded-lg bg-secondary hover:bg-muted transition-colors"
+                            >
+                              <div className="min-w-0">
+                                <p className="font-medium text-sm group-hover:text-primary transition-colors truncate">
+                                  {category.name}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1">
                                   <Badge 
                                     variant="outline" 
-                                    className={cn(
-                                      "text-[10px] px-1.5 py-0",
-                                      category.difficulty === 'Easy' && "border-green-500/50 text-green-400",
-                                      category.difficulty === 'Medium' && "border-yellow-500/50 text-yellow-400",
-                                      category.difficulty === 'Hard' && "border-orange-500/50 text-orange-400",
-                                      category.difficulty === 'Extreme' && "border-red-500/50 text-red-400"
-                                    )}
+                                    className="text-[10px] px-1.5 py-0 border-primary/50 text-primary"
                                   >
-                                    {category.difficulty}
+                                    <MetricIcon className="h-2.5 w-2.5 mr-0.5" />
+                                    {category.metric_type}
                                   </Badge>
-                                )}
-                                {category.timing_method && (
-                                  <span className="text-[10px] text-muted-foreground">
-                                    {category.timing_method}
-                                  </span>
-                                )}
+                                </div>
                               </div>
-                            </div>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-                          </Link>
-                        ))}
+                              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                            </Link>
+                          );
+                        })}
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground text-center py-8">
@@ -207,7 +204,7 @@ export default function Leaderboards() {
             <div className="card-section">
               <div className="card-section-header flex items-center gap-2">
                 <Clock className="h-4 w-4 text-primary" />
-                Latest Runs
+                Latest Records
               </div>
               <div className="card-section-body space-y-2">
                 {runsLoading ? (
@@ -234,7 +231,7 @@ export default function Leaderboards() {
                           {run.profiles?.username}
                         </span>
                         <span className="font-mono text-xs text-primary font-medium">
-                          {formatTime(run.time_ms)}
+                          {formatValue(run.time_ms, run.categories?.metric_type || 'time')}
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
@@ -242,7 +239,7 @@ export default function Leaderboards() {
                           {run.categories?.gamemodes?.name} - {run.categories?.name}
                         </span>
                         {run.is_world_record && (
-                          <Badge className="bg-lifeboat-gold/20 text-lifeboat-gold text-[10px] px-1 py-0">
+                          <Badge className="bg-accent/20 text-accent text-[10px] px-1 py-0">
                             WR
                           </Badge>
                         )}
@@ -251,7 +248,7 @@ export default function Leaderboards() {
                   ))
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    No runs yet
+                    No records yet
                   </p>
                 )}
               </div>
