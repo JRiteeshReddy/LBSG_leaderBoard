@@ -22,31 +22,33 @@ export function Header() {
   const location = useLocation();
 
   const navLinks = [
-    { to: '/gamemodes', label: 'Games', icon: Gamepad2 },
-    { to: '/leaderboards', label: 'Leaderboards', icon: Trophy },
+    { to: '/gamemodes', label: 'Games', icon: Gamepad2, color: 'blue' },
+    { to: '/leaderboards', label: 'Leaderboards', icon: Trophy, color: 'red' },
   ];
 
   const isActive = (path: string) => location.pathname.startsWith(path);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
-      <div className="container flex h-12 items-center justify-between">
+    <header className="sticky top-0 z-50 border-b border-border bg-background shadow-sm">
+      <div className="container flex h-14 items-center justify-between">
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center gap-2 group">
             <Anchor className="h-6 w-6 text-primary" />
-            <span className="font-display text-lg font-bold hidden sm:block">LifeBoat</span>
+            <span className="font-display text-lg font-bold hidden sm:block text-foreground">LifeBoat</span>
           </Link>
 
-          <nav className="hidden md:flex items-center">
+          <nav className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors",
+                  "flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded transition-colors",
                   isActive(link.to)
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? link.color === 'blue' 
+                      ? "bg-primary/10 text-primary" 
+                      : "bg-accent/10 text-accent"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                 )}
               >
                 <link.icon className="h-4 w-4" />
@@ -60,7 +62,7 @@ export function Header() {
           {user ? (
             <>
               <Link to="/submit" className="hidden sm:block">
-                <Button size="sm" variant="ghost" className="gap-1.5 text-sm">
+                <Button size="sm" className="gap-1.5 text-sm bg-accent text-accent-foreground hover:bg-accent/90">
                   <Play className="h-4 w-4" />
                   Submit
                 </Button>
@@ -69,7 +71,7 @@ export function Header() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
-                    <Avatar className="h-8 w-8 border border-border">
+                    <Avatar className="h-8 w-8 border-2 border-primary">
                       <AvatarImage src={user.user_metadata?.avatar_url} />
                       <AvatarFallback className="bg-secondary text-foreground text-sm">
                         {user.email?.charAt(0).toUpperCase()}
@@ -80,20 +82,20 @@ export function Header() {
                 <DropdownMenuContent align="end" className="w-48 bg-popover border-border">
                   <DropdownMenuItem asChild>
                     <Link to={`/profile/${user.id}`} className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
+                      <User className="h-4 w-4 text-primary" />
                       Profile
                     </Link>
                   </DropdownMenuItem>
                   {roleData?.isModerator && (
                     <DropdownMenuItem asChild>
                       <Link to="/moderation" className="flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
+                        <Shield className="h-4 w-4 text-accent" />
                         Moderation
                       </Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={signOut} className="text-destructive">
+                  <DropdownMenuItem onClick={signOut} className="text-accent">
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
                   </DropdownMenuItem>
@@ -103,10 +105,14 @@ export function Header() {
           ) : (
             <div className="flex items-center gap-2">
               <Link to="/auth">
-                <Button variant="ghost" size="sm">Sign In</Button>
+                <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                  Sign In
+                </Button>
               </Link>
               <Link to="/auth?mode=signup" className="hidden sm:block">
-                <Button size="sm">Sign Up</Button>
+                <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90">
+                  Sign Up
+                </Button>
               </Link>
             </div>
           )}
@@ -127,7 +133,9 @@ export function Header() {
                     className={cn(
                       "flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-colors",
                       isActive(link.to)
-                        ? "bg-primary text-primary-foreground"
+                        ? link.color === 'blue'
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-accent text-accent-foreground"
                         : "text-foreground hover:bg-secondary"
                     )}
                   >
@@ -139,10 +147,10 @@ export function Header() {
                   <Link
                     to="/submit"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm hover:bg-secondary"
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm hover:bg-secondary text-accent"
                   >
                     <Play className="h-4 w-4" />
-                    Submit Run
+                    Submit Record
                   </Link>
                 )}
               </nav>
