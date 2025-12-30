@@ -1,14 +1,14 @@
 import { useParams, Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { useGamemode, useCategory } from '@/hooks/useGamemodes';
-import { useLeaderboard } from '@/hooks/useRuns';
-import { RunCard } from '@/components/runs/RunCard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useLeaderboard, formatTime } from '@/hooks/useRuns';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Trophy, Clock, Target, ArrowLeft, FileText, Plus } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Trophy, Clock, Target, ArrowLeft, FileText, Plus, ExternalLink, Play } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
 
 export default function LeaderboardDetail() {
   const { gamemodeSlug, categorySlug } = useParams<{ gamemodeSlug: string; categorySlug: string }>();
@@ -20,14 +20,9 @@ export default function LeaderboardDetail() {
   if (categoryLoading) {
     return (
       <Layout>
-        <div className="container py-12">
-          <Skeleton className="h-8 w-48 mb-4" />
-          <Skeleton className="h-6 w-96 mb-8" />
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-20 rounded-xl" />
-            ))}
-          </div>
+        <div className="container py-6">
+          <Skeleton className="h-6 w-48 mb-4" />
+          <Skeleton className="h-64" />
         </div>
       </Layout>
     );
@@ -36,12 +31,11 @@ export default function LeaderboardDetail() {
   if (!category || !gamemode) {
     return (
       <Layout>
-        <div className="container py-24 text-center">
-          <Trophy className="h-16 w-16 mx-auto mb-6 text-muted-foreground" />
-          <h1 className="font-display text-3xl font-bold mb-4">Leaderboard Not Found</h1>
-          <p className="text-muted-foreground mb-8">The leaderboard you're looking for doesn't exist.</p>
+        <div className="container py-16 text-center">
+          <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <h1 className="font-display text-xl font-bold mb-2">Leaderboard Not Found</h1>
           <Link to="/leaderboards">
-            <Button>
+            <Button variant="secondary" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Leaderboards
             </Button>
@@ -51,123 +45,172 @@ export default function LeaderboardDetail() {
     );
   }
 
-  const difficultyColors: Record<string, string> = {
-    Easy: 'bg-green-500/20 text-green-400 border-green-500/30',
-    Medium: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-    Hard: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    Extreme: 'bg-red-500/20 text-red-400 border-red-500/30',
-  };
-
   return (
     <Layout>
-      <div className="container py-12 lg:py-16">
-        <Link 
-          to="/leaderboards" 
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Leaderboards
-        </Link>
+      <div className="container py-6">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+          <Link to="/leaderboards" className="hover:text-foreground">Leaderboards</Link>
+          <span>/</span>
+          <Link to={`/gamemodes/${gamemode.slug}`} className="hover:text-foreground">{gamemode.name}</Link>
+          <span>/</span>
+          <span className="text-foreground">{category.name}</span>
+        </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Main Leaderboard */}
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="text-muted-foreground mb-1">{gamemode.name}</p>
-                <h1 className="font-display text-3xl lg:text-4xl font-bold flex items-center gap-3">
-                  <Trophy className="h-8 w-8 text-primary" />
-                  {category.name}
-                </h1>
+        {/* Two Column Layout */}
+        <div className="grid lg:grid-cols-4 gap-6">
+          {/* Left Column - Leaderboard Table */}
+          <div className="lg:col-span-3">
+            <div className="card-section">
+              <div className="card-section-header flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-primary" />
+                  {category.name} Leaderboard
+                </span>
+                {user && (
+                  <Link to={`/submit?category=${category.id}`}>
+                    <Button size="sm" className="h-7 text-xs gap-1">
+                      <Plus className="h-3 w-3" />
+                      Submit
+                    </Button>
+                  </Link>
+                )}
               </div>
-              {user && (
-                <Link to={`/submit?category=${category.id}`}>
-                  <Button className="glow-green">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Submit Run
-                  </Button>
-                </Link>
-              )}
+              <div className="overflow-x-auto">
+                {runsLoading ? (
+                  <div className="p-4 space-y-2">
+                    {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-10" />)}
+                  </div>
+                ) : runs && runs.length > 0 ? (
+                  <table className="dense-table">
+                    <thead>
+                      <tr>
+                        <th className="w-12">Rank</th>
+                        <th>Player</th>
+                        <th>Time</th>
+                        <th>Date</th>
+                        <th className="w-12">Video</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {runs.map((run, index) => {
+                        const rank = index + 1;
+                        return (
+                          <tr key={run.id}>
+                            <td>
+                              <span className={cn(
+                                "font-mono font-bold",
+                                rank === 1 && "rank-1",
+                                rank === 2 && "rank-2",
+                                rank === 3 && "rank-3"
+                              )}>
+                                {rank}
+                              </span>
+                            </td>
+                            <td>
+                              <Link
+                                to={`/profile/${run.user_id}`}
+                                className="flex items-center gap-2 hover:text-primary"
+                              >
+                                <Avatar className="h-6 w-6">
+                                  <AvatarImage src={run.profiles?.avatar_url || undefined} />
+                                  <AvatarFallback className="text-[10px] bg-secondary">
+                                    {run.profiles?.username?.charAt(0).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="font-medium">{run.profiles?.username}</span>
+                                {run.is_world_record && (
+                                  <Badge className="bg-lifeboat-gold/20 text-lifeboat-gold text-[10px] px-1.5 py-0">
+                                    WR
+                                  </Badge>
+                                )}
+                              </Link>
+                            </td>
+                            <td>
+                              <span className="font-mono text-primary font-medium">
+                                {formatTime(run.time_ms)}
+                              </span>
+                            </td>
+                            <td className="text-muted-foreground text-xs">
+                              {new Date(run.submitted_at).toLocaleDateString()}
+                            </td>
+                            <td>
+                              <a
+                                href={run.youtube_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center h-7 w-7 rounded bg-secondary hover:bg-muted transition-colors"
+                              >
+                                <Play className="h-3.5 w-3.5 text-primary" />
+                              </a>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="p-8 text-center">
+                    <Trophy className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                    <p className="text-sm text-muted-foreground mb-4">No runs submitted yet</p>
+                    {user ? (
+                      <Link to={`/submit?category=${category.id}`}>
+                        <Button size="sm">Be the first!</Button>
+                      </Link>
+                    ) : (
+                      <Link to="/auth">
+                        <Button size="sm" variant="secondary">Sign in to submit</Button>
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-
-            {runsLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} className="h-20 rounded-xl" />
-                ))}
-              </div>
-            ) : runs && runs.length > 0 ? (
-              <div className="space-y-3">
-                {runs.map((run, index) => (
-                  <RunCard key={run.id} run={run} rank={index + 1} />
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="py-16 text-center">
-                  <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <h3 className="font-display text-xl font-bold mb-2">No runs yet</h3>
-                  <p className="text-muted-foreground mb-6">Be the first to submit a run for this category!</p>
-                  {user ? (
-                    <Link to={`/submit?category=${category.id}`}>
-                      <Button>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Submit a Run
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Link to="/auth">
-                      <Button>Sign in to Submit</Button>
-                    </Link>
-                  )}
-                </CardContent>
-              </Card>
-            )}
           </div>
 
-          {/* Sidebar */}
-          <div className="lg:w-80 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-display text-lg">Category Info</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">{category.description}</p>
-                
+          {/* Right Column - Info */}
+          <div className="space-y-4">
+            <div className="card-section">
+              <div className="card-section-header">Category Info</div>
+              <div className="card-section-body space-y-3">
+                {category.description && (
+                  <p className="text-sm text-muted-foreground">{category.description}</p>
+                )}
                 <div className="flex flex-wrap gap-2">
                   {category.difficulty && (
-                    <Badge className={difficultyColors[category.difficulty] || 'bg-secondary'}>
+                    <Badge variant="outline" className={cn(
+                      "text-xs",
+                      category.difficulty === 'Easy' && "border-green-500/50 text-green-400",
+                      category.difficulty === 'Medium' && "border-yellow-500/50 text-yellow-400",
+                      category.difficulty === 'Hard' && "border-orange-500/50 text-orange-400",
+                      category.difficulty === 'Extreme' && "border-red-500/50 text-red-400"
+                    )}>
                       <Target className="h-3 w-3 mr-1" />
                       {category.difficulty}
                     </Badge>
                   )}
-                  {category.estimated_time && (
-                    <Badge variant="secondary">
+                  {category.timing_method && (
+                    <Badge variant="secondary" className="text-xs">
                       <Clock className="h-3 w-3 mr-1" />
-                      {category.estimated_time}
+                      {category.timing_method}
                     </Badge>
                   )}
-                  {category.timing_method && (
-                    <Badge variant="outline">{category.timing_method}</Badge>
-                  )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {category.rules && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="font-display text-lg flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-primary" />
-                    Rules
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+              <div className="card-section">
+                <div className="card-section-header flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" />
+                  Rules
+                </div>
+                <div className="card-section-body">
+                  <p className="text-xs text-muted-foreground whitespace-pre-wrap">
                     {category.rules}
                   </p>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )}
           </div>
         </div>
