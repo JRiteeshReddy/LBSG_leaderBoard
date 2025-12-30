@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Clock, Target, ArrowLeft, FileText, Plus, Play, Timer, Hash, Star } from 'lucide-react';
+import { Trophy, ArrowLeft, FileText, Plus, Play, Timer, Hash, Star } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
@@ -42,9 +42,9 @@ export default function LeaderboardDetail() {
       <Layout>
         <div className="container py-16 text-center">
           <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <h1 className="font-display text-xl font-bold mb-2">Leaderboard Not Found</h1>
+          <h1 className="font-display text-xl font-bold mb-2 text-foreground">Leaderboard Not Found</h1>
           <Link to="/leaderboards">
-            <Button variant="secondary" size="sm">
+            <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Leaderboards
             </Button>
@@ -63,11 +63,11 @@ export default function LeaderboardDetail() {
       <div className="container py-6">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-          <Link to="/leaderboards" className="hover:text-foreground">Leaderboards</Link>
+          <Link to="/leaderboards" className="hover:text-primary">Leaderboards</Link>
           <span>/</span>
-          <Link to={`/gamemodes/${gamemode.slug}`} className="hover:text-foreground">{gamemode.name}</Link>
+          <Link to={`/gamemodes/${gamemode.slug}`} className="hover:text-primary">{gamemode.name}</Link>
           <span>/</span>
-          <span className="text-foreground">{category.name}</span>
+          <span className="text-foreground font-medium">{category.name}</span>
         </div>
 
         {/* Two Column Layout */}
@@ -75,14 +75,14 @@ export default function LeaderboardDetail() {
           {/* Left Column - Leaderboard Table */}
           <div className="lg:col-span-3">
             <div className="card-section">
-              <div className="card-section-header flex items-center justify-between">
+              <div className="card-section-header-blue flex items-center justify-between">
                 <span className="flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-primary" />
+                  <Trophy className="h-4 w-4" />
                   {category.name} Leaderboard
                 </span>
                 {user && (
                   <Link to={`/submit?category=${category.id}`}>
-                    <Button size="sm" className="h-7 text-xs gap-1">
+                    <Button size="sm" className="h-7 text-xs gap-1 bg-accent text-accent-foreground hover:bg-accent/90">
                       <Plus className="h-3 w-3" />
                       Submit
                     </Button>
@@ -134,7 +134,7 @@ export default function LeaderboardDetail() {
                                 </Avatar>
                                 <span className="font-medium">{run.profiles?.username}</span>
                                 {run.is_world_record && (
-                                  <Badge className="bg-accent/20 text-accent text-[10px] px-1.5 py-0">
+                                  <Badge className="bg-accent text-accent-foreground text-[10px] px-1.5 py-0">
                                     WR
                                   </Badge>
                                 )}
@@ -142,8 +142,8 @@ export default function LeaderboardDetail() {
                             </td>
                             <td>
                               <span className={cn(
-                                "font-mono font-medium",
-                                category.metric_type === 'time' ? "metric-time" : "metric-count"
+                                "font-mono font-semibold",
+                                category.metric_type === 'time' ? "text-primary" : "text-accent"
                               )}>
                                 {formatValue(run.time_ms, category.metric_type)}
                               </span>
@@ -156,9 +156,9 @@ export default function LeaderboardDetail() {
                                 href={run.youtube_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center h-7 w-7 rounded bg-secondary hover:bg-muted transition-colors"
+                                className="inline-flex items-center justify-center h-7 w-7 rounded bg-accent/10 hover:bg-accent text-accent hover:text-accent-foreground transition-colors"
                               >
-                                <Play className="h-3.5 w-3.5 text-primary" />
+                                <Play className="h-3.5 w-3.5" />
                               </a>
                             </td>
                           </tr>
@@ -172,11 +172,11 @@ export default function LeaderboardDetail() {
                     <p className="text-sm text-muted-foreground mb-4">No records submitted yet</p>
                     {user ? (
                       <Link to={`/submit?category=${category.id}`}>
-                        <Button size="sm">Be the first!</Button>
+                        <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90">Be the first!</Button>
                       </Link>
                     ) : (
                       <Link to="/auth">
-                        <Button size="sm" variant="secondary">Sign in to submit</Button>
+                        <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">Sign in to submit</Button>
                       </Link>
                     )}
                   </div>
@@ -188,17 +188,20 @@ export default function LeaderboardDetail() {
           {/* Right Column - Info */}
           <div className="space-y-4">
             <div className="card-section">
-              <div className="card-section-header">Category Info</div>
+              <div className="card-section-header border-l-4 border-l-primary">Category Info</div>
               <div className="card-section-body space-y-3">
                 {category.description && (
                   <p className="text-sm text-muted-foreground">{category.description}</p>
                 )}
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="text-xs border-primary/50 text-primary">
+                  <Badge variant="outline" className="text-xs border-primary text-primary">
                     <MetricIcon className="h-3 w-3 mr-1" />
                     {metricLabel}
                   </Badge>
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge className={cn(
+                    "text-xs",
+                    isHigherBetter ? "bg-accent/10 text-accent" : "bg-primary/10 text-primary"
+                  )}>
                     {isHigherBetter ? 'Higher is better' : 'Lower is better'}
                   </Badge>
                 </div>
@@ -207,8 +210,8 @@ export default function LeaderboardDetail() {
 
             {category.rules && (
               <div className="card-section">
-                <div className="card-section-header flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-primary" />
+                <div className="card-section-header flex items-center gap-2 border-l-4 border-l-accent">
+                  <FileText className="h-4 w-4 text-accent" />
                   Rules
                 </div>
                 <div className="card-section-body">

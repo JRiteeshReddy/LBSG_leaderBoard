@@ -39,8 +39,8 @@ export default function Leaderboards() {
       <div className="container py-6">
         {/* Page Header */}
         <div className="mb-6">
-          <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-            <Trophy className="h-6 w-6 text-primary" />
+          <h1 className="font-display text-2xl font-bold flex items-center gap-2 text-foreground">
+            <Trophy className="h-6 w-6 text-accent" />
             Leaderboards
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -61,9 +61,10 @@ export default function Leaderboards() {
                   ))}
                 </>
               ) : (
-                gamemodes?.map((gamemode) => {
+                gamemodes?.map((gamemode, index) => {
                   const IconComponent = iconMap[gamemode.icon || ''] || Gamepad2;
                   const isActive = activeGamemode?.id === gamemode.id;
+                  const useRed = index % 2 === 1;
                   
                   return (
                     <button
@@ -71,7 +72,7 @@ export default function Leaderboards() {
                       onClick={() => setSelectedGamemode(gamemode.id)}
                       className={cn(
                         "pill-button gap-1.5",
-                        isActive && "active"
+                        isActive && (useRed ? "active-red" : "active")
                       )}
                     >
                       <IconComponent className="h-3.5 w-3.5" />
@@ -85,15 +86,15 @@ export default function Leaderboards() {
             {/* Categories Grid */}
             {activeGamemode && (
               <div className="card-section">
-                <div className="card-section-header flex items-center justify-between">
+                <div className="card-section-header-blue flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     {(() => {
                       const IconComponent = iconMap[activeGamemode.icon || ''] || Gamepad2;
-                      return <IconComponent className="h-4 w-4 text-primary" />;
+                      return <IconComponent className="h-4 w-4" />;
                     })()}
                     {activeGamemode.name} Categories
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs opacity-80">
                     {activeGamemode.categories?.length || 0} categories
                   </span>
                 </div>
@@ -102,29 +103,39 @@ export default function Leaderboards() {
                     <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
                       {activeGamemode.categories
                         .sort((a, b) => a.display_order - b.display_order)
-                        .map((category) => {
+                        .map((category, index) => {
                           const MetricIcon = metricIcons[category.metric_type] || Timer;
+                          const useRed = index % 2 === 1;
                           return (
                             <Link
                               key={category.id}
                               to={`/leaderboards/${activeGamemode.slug}/${category.slug}`}
-                              className="group flex items-center justify-between p-3 rounded-lg bg-secondary hover:bg-muted transition-colors"
+                              className="group flex items-center justify-between p-3 rounded-lg bg-secondary hover:bg-muted transition-colors border border-border"
                             >
                               <div className="min-w-0">
-                                <p className="font-medium text-sm group-hover:text-primary transition-colors truncate">
+                                <p className={cn(
+                                  "font-medium text-sm transition-colors",
+                                  useRed ? "group-hover:text-accent" : "group-hover:text-primary"
+                                )}>
                                   {category.name}
                                 </p>
                                 <div className="flex items-center gap-2 mt-1">
                                   <Badge 
                                     variant="outline" 
-                                    className="text-[10px] px-1.5 py-0 border-primary/50 text-primary"
+                                    className={cn(
+                                      "text-[10px] px-1.5 py-0",
+                                      useRed ? "border-accent/50 text-accent" : "border-primary/50 text-primary"
+                                    )}
                                   >
                                     <MetricIcon className="h-2.5 w-2.5 mr-0.5" />
                                     {category.metric_type}
                                   </Badge>
                                 </div>
                               </div>
-                              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                              <ChevronRight className={cn(
+                                "h-4 w-4 text-muted-foreground transition-colors flex-shrink-0",
+                                useRed ? "group-hover:text-accent" : "group-hover:text-primary"
+                              )} />
                             </Link>
                           );
                         })}
@@ -140,7 +151,7 @@ export default function Leaderboards() {
 
             {/* All Games Overview */}
             <div className="card-section">
-              <div className="card-section-header">
+              <div className="card-section-header-red">
                 All Games Overview
               </div>
               <div className="overflow-x-auto">
@@ -164,16 +175,20 @@ export default function Leaderboards() {
                         ))}
                       </>
                     ) : (
-                      gamemodes?.map((gamemode) => {
+                      gamemodes?.map((gamemode, index) => {
                         const IconComponent = iconMap[gamemode.icon || ''] || Gamepad2;
+                        const useRed = index % 2 === 1;
                         return (
                           <tr key={gamemode.id}>
                             <td>
                               <Link 
                                 to={`/gamemodes/${gamemode.slug}`}
-                                className="flex items-center gap-2 hover:text-primary"
+                                className={cn(
+                                  "flex items-center gap-2",
+                                  useRed ? "hover:text-accent" : "hover:text-primary"
+                                )}
                               >
-                                <IconComponent className="h-4 w-4 text-primary" />
+                                <IconComponent className={cn("h-4 w-4", useRed ? "text-accent" : "text-primary")} />
                                 <span className="font-medium">{gamemode.name}</span>
                               </Link>
                             </td>
@@ -183,7 +198,7 @@ export default function Leaderboards() {
                             <td>
                               <Link 
                                 to={`/gamemodes/${gamemode.slug}`}
-                                className="text-primary hover:underline text-xs"
+                                className={cn("hover:underline text-xs", useRed ? "text-accent" : "text-primary")}
                               >
                                 View →
                               </Link>
@@ -202,7 +217,7 @@ export default function Leaderboards() {
           <div className="space-y-4">
             {/* Recent Runs */}
             <div className="card-section">
-              <div className="card-section-header flex items-center gap-2">
+              <div className="card-section-header flex items-center gap-2 border-l-4 border-l-primary">
                 <Clock className="h-4 w-4 text-primary" />
                 Latest Records
               </div>
@@ -214,38 +229,44 @@ export default function Leaderboards() {
                     ))}
                   </>
                 ) : recentRuns && recentRuns.length > 0 ? (
-                  recentRuns.map((run) => (
-                    <Link
-                      key={run.id}
-                      to={`/leaderboards/${run.categories?.gamemodes?.slug}/${run.categories?.slug}`}
-                      className="block p-2 rounded bg-secondary/50 hover:bg-secondary transition-colors"
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <Avatar className="h-5 w-5">
-                          <AvatarImage src={run.profiles?.avatar_url || undefined} />
-                          <AvatarFallback className="text-[10px] bg-muted">
-                            {run.profiles?.username?.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm font-medium truncate flex-1">
-                          {run.profiles?.username}
-                        </span>
-                        <span className="font-mono text-xs text-primary font-medium">
-                          {formatValue(run.time_ms, run.categories?.metric_type || 'time')}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-muted-foreground truncate">
-                          {run.categories?.gamemodes?.name} - {run.categories?.name}
-                        </span>
-                        {run.is_world_record && (
-                          <Badge className="bg-accent/20 text-accent text-[10px] px-1 py-0">
-                            WR
-                          </Badge>
-                        )}
-                      </div>
-                    </Link>
-                  ))
+                  recentRuns.map((run, index) => {
+                    const useRed = index % 2 === 1;
+                    return (
+                      <Link
+                        key={run.id}
+                        to={`/leaderboards/${run.categories?.gamemodes?.slug}/${run.categories?.slug}`}
+                        className="block p-2 rounded bg-secondary hover:bg-muted transition-colors border border-border"
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Avatar className="h-5 w-5">
+                            <AvatarImage src={run.profiles?.avatar_url || undefined} />
+                            <AvatarFallback className="text-[10px] bg-muted">
+                              {run.profiles?.username?.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-medium truncate flex-1">
+                            {run.profiles?.username}
+                          </span>
+                          <span className={cn(
+                            "font-mono text-xs font-semibold",
+                            useRed ? "text-accent" : "text-primary"
+                          )}>
+                            {formatValue(run.time_ms, run.categories?.metric_type || 'time')}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground truncate">
+                            {run.categories?.gamemodes?.name} - {run.categories?.name}
+                          </span>
+                          {run.is_world_record && (
+                            <Badge className="bg-accent text-accent-foreground text-[10px] px-1 py-0">
+                              WR
+                            </Badge>
+                          )}
+                        </div>
+                      </Link>
+                    );
+                  })
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     No records yet

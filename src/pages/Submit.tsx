@@ -120,34 +120,34 @@ export default function Submit() {
       <div className="container max-w-2xl py-12 lg:py-16">
         <Link 
           to="/" 
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Home
         </Link>
 
-        <Card>
-          <CardHeader>
+        <Card className="border-2 border-primary/20">
+          <CardHeader className="bg-primary/5 border-b border-primary/10">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg bg-primary/10 text-primary">
+              <div className="p-3 rounded-lg bg-accent text-accent-foreground">
                 <Trophy className="h-6 w-6" />
               </div>
               <div>
-                <CardTitle className="font-display text-2xl">Submit a Record</CardTitle>
+                <CardTitle className="font-display text-2xl text-foreground">Submit a Record</CardTitle>
                 <CardDescription>Submit your record for verification</CardDescription>
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Game Mode</Label>
+                  <Label className="text-foreground">Game Mode</Label>
                   <Select
                     value={form.gamemode_id}
                     onValueChange={(value) => setForm({ ...form, gamemode_id: value, category_id: '' })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="border-border">
                       <SelectValue placeholder="Select game mode" />
                     </SelectTrigger>
                     <SelectContent>
@@ -161,13 +161,13 @@ export default function Submit() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Category</Label>
+                  <Label className="text-foreground">Category</Label>
                   <Select
                     value={form.category_id}
                     onValueChange={(value) => setForm({ ...form, category_id: value })}
                     disabled={!form.gamemode_id}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="border-border">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -178,12 +178,12 @@ export default function Submit() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.category_id && <p className="text-sm text-destructive">{errors.category_id}</p>}
+                  {errors.category_id && <p className="text-sm text-accent">{errors.category_id}</p>}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="value">
+                <Label htmlFor="value" className="text-foreground">
                   {getMetricLabel(metricType)}
                 </Label>
                 <Input
@@ -191,16 +191,17 @@ export default function Submit() {
                   placeholder={getMetricPlaceholder(metricType)}
                   value={form.value}
                   onChange={(e) => setForm({ ...form, value: e.target.value })}
+                  className="border-border"
                 />
                 <p className="text-xs text-muted-foreground">
                   {getMetricHelpText(metricType)}
                 </p>
-                {errors.value && <p className="text-sm text-destructive">{errors.value}</p>}
+                {errors.value && <p className="text-sm text-accent">{errors.value}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="youtube_url" className="flex items-center gap-2">
-                  <Youtube className="h-4 w-4" />
+                <Label htmlFor="youtube_url" className="flex items-center gap-2 text-foreground">
+                  <Youtube className="h-4 w-4 text-accent" />
                   YouTube Video URL
                 </Label>
                 <Input
@@ -208,24 +209,26 @@ export default function Submit() {
                   placeholder="https://www.youtube.com/watch?v=..."
                   value={form.youtube_url}
                   onChange={(e) => setForm({ ...form, youtube_url: e.target.value })}
+                  className="border-border"
                 />
-                {errors.youtube_url && <p className="text-sm text-destructive">{errors.youtube_url}</p>}
+                {errors.youtube_url && <p className="text-sm text-accent">{errors.youtube_url}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes">Notes (Optional)</Label>
+                <Label htmlFor="notes" className="text-foreground">Notes (Optional)</Label>
                 <Textarea
                   id="notes"
                   placeholder="Any additional details about your record..."
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   rows={3}
+                  className="border-border"
                 />
               </div>
 
               <Button 
                 type="submit" 
-                className="w-full" 
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90" 
                 disabled={submitRun.isPending}
               >
                 {submitRun.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
