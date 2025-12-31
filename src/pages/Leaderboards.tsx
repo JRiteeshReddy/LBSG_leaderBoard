@@ -44,7 +44,7 @@ export default function Leaderboards() {
             Leaderboards
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            View rankings and records for all game modes
+            View stats, rankings, and records for all game modes
           </p>
         </div>
 

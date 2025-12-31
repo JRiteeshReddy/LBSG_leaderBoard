@@ -18,8 +18,8 @@ export default function Gamemodes() {
             <h1 className="font-display text-4xl font-bold">Gamemodes</h1>
           </div>
           <p className="text-muted-foreground text-lg max-w-2xl">
-            Choose a gamemode to explore its categories and compete on the leaderboards. 
-            Each gamemode has unique challenges and rules.
+            Choose a gamemode to explore its categories and view the leaderboards. 
+            Each gamemode tracks different stats and achievements.
           </p>
         </div>
 

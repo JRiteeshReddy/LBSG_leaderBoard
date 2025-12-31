@@ -15,7 +15,7 @@ export function Layout({ children }: LayoutProps) {
       <footer className="border-t border-border py-4 mt-auto">
         <div className="container flex items-center justify-between text-xs text-muted-foreground">
           <p>© 2024 LifeBoat Leaderboards</p>
-          <p>Not affiliated with LifeBoat Network</p>
+          <p>Not affiliated with LifeBoat Network. Stats tracking for all game modes.</p>
         </div>
       </footer>
     </div>

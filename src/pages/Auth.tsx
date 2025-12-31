@@ -140,7 +140,7 @@ export default function Auth() {
             <span className="font-display text-2xl font-bold">LifeBoat Leaderboards</span>
           </Link>
           <p className="text-muted-foreground">
-            Join the speedrunning community
+            Track your stats and compete on the leaderboards
           </p>
         </div>
 
