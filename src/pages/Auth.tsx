@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import logo from '@/assets/logo.png';
+import { AnimatedBackground } from '@/components/layout/AnimatedBackground';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -115,15 +116,17 @@ export default function Auth() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-background flex items-center justify-center relative">
+        <AnimatedBackground />
+        <Loader2 className="h-8 w-8 animate-spin text-primary relative z-10" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container max-w-md py-8 lg:py-16">
+    <div className="min-h-screen bg-background relative">
+      <AnimatedBackground />
+      <div className="container max-w-md py-8 lg:py-16 relative z-10">
         {/* Back button */}
         <Link 
           to="/" 
