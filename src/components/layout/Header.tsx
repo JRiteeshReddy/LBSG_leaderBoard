@@ -10,10 +10,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Anchor, Trophy, Gamepad2, User, LogOut, Shield, Menu, Play } from 'lucide-react';
+import { Trophy, Gamepad2, User, LogOut, Shield, Menu, Play } from 'lucide-react';
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import logo from '@/assets/logo.png';
 
 export function Header() {
   const { user, signOut } = useAuth();
@@ -33,7 +34,7 @@ export function Header() {
       <div className="container flex h-14 items-center justify-between">
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center gap-2 group">
-            <Anchor className="h-6 w-6 text-primary" />
+            <img src={logo} alt="LifeBoat" className="h-8 w-8" />
             <span className="font-display text-lg font-bold hidden sm:block text-foreground">LifeBoat</span>
           </Link>
 
