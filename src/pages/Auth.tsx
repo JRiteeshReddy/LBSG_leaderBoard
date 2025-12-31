@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Anchor, Loader2 } from 'lucide-react';
+import { Anchor, Loader2, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -108,28 +107,36 @@ export default function Auth() {
         });
       }
     } else {
-      toast({ title: 'Account created!', description: 'Welcome to LifeBoat Speedruns!' });
+      toast({ title: 'Account created!', description: 'Welcome to LifeBoat Leaderboards!' });
       navigate('/');
     }
   };
 
   if (loading) {
     return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </Layout>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
   return (
-    <Layout>
-      <div className="container max-w-md py-16 lg:py-24">
+    <div className="min-h-screen bg-background">
+      <div className="container max-w-md py-8 lg:py-16">
+        {/* Back button */}
+        <Link 
+          to="/" 
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back to home</span>
+        </Link>
+
+        {/* Logo and title */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-6">
+          <Link to="/" className="inline-flex items-center gap-2 mb-4">
             <Anchor className="h-10 w-10 text-primary" />
-            <span className="font-display text-2xl font-bold">LifeBoat</span>
+            <span className="font-display text-2xl font-bold">LifeBoat Leaderboards</span>
           </Link>
           <p className="text-muted-foreground">
             Join the speedrunning community
@@ -237,6 +244,6 @@ export default function Auth() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </div>
   );
 }
