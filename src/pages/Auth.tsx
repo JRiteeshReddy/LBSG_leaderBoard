@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Anchor, Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
+import logo from '@/assets/logo.png';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -134,8 +135,8 @@ export default function Auth() {
 
         {/* Logo and title */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <Anchor className="h-10 w-10 text-primary" />
+          <Link to="/" className="inline-flex items-center gap-3 mb-4">
+            <img src={logo} alt="LifeBoat Leaderboards" className="h-12 w-12" />
             <span className="font-display text-2xl font-bold">LifeBoat Leaderboards</span>
           </Link>
           <p className="text-muted-foreground">
