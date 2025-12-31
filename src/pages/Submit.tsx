@@ -134,7 +134,7 @@ export default function Submit() {
               </div>
               <div>
                 <CardTitle className="font-display text-2xl text-foreground">Submit a Record</CardTitle>
-                <CardDescription>Submit your record for verification</CardDescription>
+                <CardDescription>Submit your stats for verification and ranking</CardDescription>
               </div>
             </div>
           </CardHeader>

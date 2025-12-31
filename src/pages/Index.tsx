@@ -39,7 +39,7 @@ export default function Index() {
                 LifeBoat Leaderboards
               </h1>
               <p className="text-muted-foreground text-sm">
-                Competitive rankings for LifeBoat Minecraft Bedrock Server
+                Track stats and compete on leaderboards for LifeBoat Minecraft Bedrock Server
               </p>
             </div>
             <div className="flex items-center gap-3">
