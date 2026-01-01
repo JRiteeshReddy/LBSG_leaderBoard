@@ -13,6 +13,7 @@ import LeaderboardDetail from "./pages/LeaderboardDetail";
 import Submit from "./pages/Submit";
 import Profile from "./pages/Profile";
 import Moderation from "./pages/Moderation";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/submit" element={<Submit />} />
             <Route path="/profile/:userId" element={<Profile />} />
             <Route path="/moderation" element={<Moderation />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
