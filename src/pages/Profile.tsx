@@ -3,14 +3,18 @@ import { Layout } from '@/components/layout/Layout';
 import { useProfile } from '@/hooks/useProfile';
 import { useUserRuns, formatTime } from '@/hooks/useRuns';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { RoleAvatar } from '@/components/profile/RoleAvatar';
+import { RoleBadge } from '@/components/profile/RoleBadge';
 import { User, Trophy, Clock, Calendar, CheckCircle, XCircle, AlertCircle, ArrowLeft, ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const statusConfig = {
   approved: { icon: CheckCircle, label: 'Verified', className: 'bg-green-500/20 text-green-400 border-green-500/30' },
@@ -23,8 +27,24 @@ export default function Profile() {
   const { user: currentUser } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile(userId);
   const { data: runs, isLoading: runsLoading } = useUserRuns(userId || '');
+  
+  // Fetch roles for this profile
+  const { data: profileRoles } = useQuery({
+    queryKey: ['profile-roles', userId],
+    queryFn: async (): Promise<('admin' | 'moderator' | 'user')[]> => {
+      if (!userId) return ['user'];
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+      if (error) return ['user'];
+      return data.map(r => r.role as 'admin' | 'moderator' | 'user');
+    },
+    enabled: !!userId,
+  });
 
   const isOwnProfile = currentUser?.id === userId;
+  const roles: ('admin' | 'moderator' | 'user')[] = profileRoles || ['user'];
 
   const approvedRuns = runs?.filter(r => r.status === 'approved') || [];
   const pendingRuns = runs?.filter(r => r.status === 'pending') || [];
@@ -80,15 +100,20 @@ export default function Profile() {
         <Card className="mb-8">
           <CardContent className="p-8">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-              <Avatar className="h-24 w-24 border-4 border-primary/30">
-                <AvatarImage src={profile.avatar_url || undefined} />
-                <AvatarFallback className="bg-secondary text-foreground text-3xl">
-                  {profile.username.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <RoleAvatar 
+                username={profile.username}
+                avatarUrl={profile.avatar_url}
+                roles={roles}
+                size="lg"
+              />
               
               <div className="flex-1 text-center sm:text-left">
-                <h1 className="font-display text-3xl font-bold mb-2">{profile.username}</h1>
+                <div className="flex items-center gap-2 justify-center sm:justify-start mb-2">
+                  <h1 className="font-display text-3xl font-bold">{profile.username}</h1>
+                  {roles.map(role => (
+                    <RoleBadge key={role} role={role} />
+                  ))}
+                </div>
                 {profile.bio && (
                   <p className="text-muted-foreground mb-4">{profile.bio}</p>
                 )}

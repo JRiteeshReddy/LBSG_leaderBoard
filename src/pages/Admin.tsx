@@ -1,0 +1,499 @@
+import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { Layout } from '@/components/layout/Layout';
+import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
+import { useActivityLogs } from '@/hooks/useActivityLog';
+import { useBans, useUnbanUser } from '@/hooks/useBans';
+import { useAnnouncements, useCreateAnnouncement, useDeleteAnnouncement } from '@/hooks/useAnnouncements';
+import { useAllUsers, useAssignRole, useRemoveRole } from '@/hooks/useUserManagement';
+import { useGamemodes } from '@/hooks/useGamemodes';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RoleAvatar } from '@/components/profile/RoleAvatar';
+import { RoleBadge } from '@/components/profile/RoleBadge';
+import { 
+  Shield, Crown, Users, ScrollText, Megaphone, 
+  Gamepad2, Plus, Trash2, UserPlus, UserMinus, Ban, 
+  Clock, Filter, Loader2
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
+
+const LOG_CATEGORIES = [
+  { value: 'all', label: 'All Activities' },
+  { value: 'runs', label: 'Run Submissions' },
+  { value: 'moderation', label: 'Moderation Actions' },
+  { value: 'users', label: 'User Management' },
+  { value: 'categories', label: 'Category Changes' },
+  { value: 'announcements', label: 'Announcements' },
+  { value: 'bans', label: 'Bans' },
+];
+
+export default function Admin() {
+  const { user, loading: authLoading } = useAuth();
+  const { data: roleData, isLoading: roleLoading } = useUserRole();
+  
+  if (authLoading || roleLoading) {
+    return (
+      <Layout>
+        <div className="container py-12">
+          <Skeleton className="h-10 w-48 mb-8" />
+          <Skeleton className="h-[600px] rounded-xl" />
+        </div>
+      </Layout>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+  
+  if (!roleData?.isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return (
+    <Layout>
+      <div className="container py-12 lg:py-16">
+        <div className="flex items-center gap-3 mb-8">
+          <Crown className="h-8 w-8 text-amber-500" />
+          <h1 className="font-display text-3xl font-bold">Dev Panel</h1>
+        </div>
+        
+        <Tabs defaultValue="logs" className="space-y-6">
+          <TabsList className="flex-wrap">
+            <TabsTrigger value="logs" className="gap-2">
+              <ScrollText className="h-4 w-4" />
+              Activity Logs
+            </TabsTrigger>
+            <TabsTrigger value="users" className="gap-2">
+              <Users className="h-4 w-4" />
+              Users
+            </TabsTrigger>
+            <TabsTrigger value="bans" className="gap-2">
+              <Ban className="h-4 w-4" />
+              Bans
+            </TabsTrigger>
+            <TabsTrigger value="announcements" className="gap-2">
+              <Megaphone className="h-4 w-4" />
+              Announcements
+            </TabsTrigger>
+            <TabsTrigger value="categories" className="gap-2">
+              <Gamepad2 className="h-4 w-4" />
+              Categories
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="logs">
+            <ActivityLogsTab />
+          </TabsContent>
+          
+          <TabsContent value="users">
+            <UsersTab />
+          </TabsContent>
+          
+          <TabsContent value="bans">
+            <BansTab />
+          </TabsContent>
+          
+          <TabsContent value="announcements">
+            <AnnouncementsTab />
+          </TabsContent>
+          
+          <TabsContent value="categories">
+            <CategoriesTab />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </Layout>
+  );
+}
+
+function ActivityLogsTab() {
+  const [category, setCategory] = useState<string>('all');
+  const { data: logs, isLoading } = useActivityLogs(category === 'all' ? undefined : category);
+  
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2">
+          <ScrollText className="h-5 w-5" />
+          Activity Logs
+        </CardTitle>
+        <Select value={category} onValueChange={setCategory}>
+          <SelectTrigger className="w-48">
+            <Filter className="h-4 w-4 mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {LOG_CATEGORIES.map(cat => (
+              <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-16 rounded-lg" />)}
+          </div>
+        ) : logs && logs.length > 0 ? (
+          <div className="space-y-3 max-h-[600px] overflow-y-auto">
+            {logs.map((log: any) => (
+              <div key={log.id} className="p-4 rounded-lg bg-secondary border border-border">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="outline">{log.category}</Badge>
+                      <span className="font-medium">{log.action_type}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{log.description}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      by {log.performer?.username || 'Unknown'}
+                      {log.target?.username && ` → ${log.target.username}`}
+                    </p>
+                  </div>
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            <ScrollText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No activity logs yet</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function UsersTab() {
+  const { data: users, isLoading } = useAllUsers();
+  const assignRole = useAssignRole();
+  const removeRole = useRemoveRole();
+  const [selectedRole, setSelectedRole] = useState<'moderator' | 'admin'>('moderator');
+  
+  const handleAssignRole = async (userId: string) => {
+    try {
+      await assignRole.mutateAsync({ userId, role: selectedRole });
+      toast.success(`Role assigned successfully`);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+  
+  const handleRemoveRole = async (userId: string, role: 'admin' | 'moderator' | 'user') => {
+    try {
+      await removeRole.mutateAsync({ userId, role });
+      toast.success(`Role removed successfully`);
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Users className="h-5 w-5" />
+          User Management
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-16 rounded-lg" />)}
+          </div>
+        ) : (
+          <div className="space-y-3 max-h-[600px] overflow-y-auto">
+            {users?.map((u: any) => (
+              <div key={u.id} className="p-4 rounded-lg bg-secondary border border-border flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <RoleAvatar 
+                    username={u.username} 
+                    avatarUrl={u.avatar_url} 
+                    roles={u.roles} 
+                    size="sm"
+                  />
+                  <div>
+                    <p className="font-medium">{u.username}</p>
+                    <div className="flex gap-1 mt-1">
+                      {u.roles.map((role: any) => (
+                        <RoleBadge key={role} role={role} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={selectedRole} onValueChange={(v: any) => setSelectedRole(v)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="moderator">Mod</SelectItem>
+                      <SelectItem value="admin">Dev</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    size="sm" 
+                    onClick={() => handleAssignRole(u.id)}
+                    disabled={assignRole.isPending}
+                  >
+                    <UserPlus className="h-4 w-4" />
+                  </Button>
+                  {u.roles.includes('moderator') && (
+                    <Button 
+                      size="sm" 
+                      variant="destructive"
+                      onClick={() => handleRemoveRole(u.id, 'moderator')}
+                      disabled={removeRole.isPending}
+                    >
+                      <UserMinus className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function BansTab() {
+  const { data: bans, isLoading } = useBans();
+  const unbanUser = useUnbanUser();
+  
+  const handleUnban = async (banId: string) => {
+    try {
+      await unbanUser.mutateAsync(banId);
+      toast.success('User unbanned successfully');
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+  
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Ban className="h-5 w-5" />
+          Active Bans
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 rounded-lg" />)}
+          </div>
+        ) : bans && bans.length > 0 ? (
+          <div className="space-y-3">
+            {bans.map((ban: any) => (
+              <div key={ban.id} className="p-4 rounded-lg bg-destructive/10 border border-destructive/30 flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{ban.banned_user?.username || 'Unknown User'}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Banned by {ban.banned_by_user?.username || 'Unknown'}
+                  </p>
+                  {ban.reason && (
+                    <p className="text-sm text-destructive">Reason: {ban.reason}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {ban.is_permanent ? 'Permanent' : `Expires ${formatDistanceToNow(new Date(ban.expires_at), { addSuffix: true })}`}
+                  </p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleUnban(ban.id)}
+                  disabled={unbanUser.isPending}
+                >
+                  Unban
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            <Ban className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No active bans</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function AnnouncementsTab() {
+  const { data: announcements, isLoading } = useAnnouncements();
+  const createAnnouncement = useCreateAnnouncement();
+  const deleteAnnouncement = useDeleteAnnouncement();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  
+  const handleCreate = async () => {
+    try {
+      await createAnnouncement.mutateAsync({ title, content });
+      toast.success('Announcement created');
+      setDialogOpen(false);
+      setTitle('');
+      setContent('');
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+  
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteAnnouncement.mutateAsync(id);
+      toast.success('Announcement deleted');
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+  
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2">
+          <Megaphone className="h-5 w-5" />
+          Announcements
+        </CardTitle>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              New Announcement
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Announcement</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Input 
+                placeholder="Title" 
+                value={title} 
+                onChange={(e) => setTitle(e.target.value)} 
+              />
+              <Textarea 
+                placeholder="Content" 
+                value={content} 
+                onChange={(e) => setContent(e.target.value)}
+                rows={4}
+              />
+            </div>
+            <DialogFooter>
+              <Button 
+                onClick={handleCreate} 
+                disabled={!title || !content || createAnnouncement.isPending}
+              >
+                {createAnnouncement.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Create
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-lg" />)}
+          </div>
+        ) : announcements && announcements.length > 0 ? (
+          <div className="space-y-3">
+            {announcements.map((ann: any) => (
+              <div key={ann.id} className="p-4 rounded-lg bg-secondary border border-border">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-semibold mb-1">{ann.title}</h3>
+                    <p className="text-sm text-muted-foreground">{ann.content}</p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      by {ann.creator?.username || 'Unknown'} • {formatDistanceToNow(new Date(ann.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => handleDelete(ann.id)}
+                    disabled={deleteAnnouncement.isPending}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            <Megaphone className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No announcements yet</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CategoriesTab() {
+  const { data: gamemodes, isLoading } = useGamemodes();
+  
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between">
+        <CardTitle className="flex items-center gap-2">
+          <Gamepad2 className="h-5 w-5" />
+          Categories Management
+        </CardTitle>
+        <Button size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          New Category
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 rounded-lg" />)}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {gamemodes?.map((gm: any) => (
+              <div key={gm.id} className="p-4 rounded-lg bg-secondary border border-border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold">{gm.name}</h3>
+                    <p className="text-sm text-muted-foreground">{gm.description}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {gm.categories?.length || 0} categories
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm">Edit</Button>
+                    <Button variant="destructive" size="sm">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

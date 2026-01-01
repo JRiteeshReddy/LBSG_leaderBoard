@@ -4,6 +4,8 @@ import { Layout } from '@/components/layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { usePendingRuns, useVerifyRun, formatTime } from '@/hooks/useRuns';
+import { useBanUser } from '@/hooks/useBans';
+import { useLogActivity } from '@/hooks/useActivityLog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,8 +13,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Clock, Calendar, ExternalLink, Check, X, Loader2, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Shield, Clock, Calendar, ExternalLink, Check, X, Loader2, ArrowLeft, AlertTriangle, Ban, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function Moderation() {
@@ -21,10 +24,15 @@ export default function Moderation() {
   const { data: roleData, isLoading: roleLoading } = useUserRole();
   const { data: pendingRuns, isLoading: runsLoading } = usePendingRuns();
   const verifyRun = useVerifyRun();
+  const banUser = useBanUser();
+  const logActivity = useLogActivity();
   const { toast } = useToast();
 
   const [rejectDialog, setRejectDialog] = useState<{ open: boolean; runId: string | null }>({ open: false, runId: null });
+  const [banDialog, setBanDialog] = useState<{ open: boolean; userId: string | null; username: string }>({ open: false, userId: null, username: '' });
   const [rejectReason, setRejectReason] = useState('');
+  const [banReason, setBanReason] = useState('');
+  const [banDuration, setBanDuration] = useState('24');
 
   useEffect(() => {
     if (!authLoading && !roleLoading) {
@@ -36,9 +44,14 @@ export default function Moderation() {
     }
   }, [user, authLoading, roleData, roleLoading, navigate]);
 
-  const handleApprove = async (runId: string) => {
+  const handleApprove = async (runId: string, username: string) => {
     try {
       await verifyRun.mutateAsync({ runId, status: 'approved' });
+      await logActivity.mutateAsync({
+        action_type: 'APPROVE_RUN',
+        category: 'moderation',
+        description: `Approved run from ${username}`,
+      });
       toast({ title: 'Run approved', description: 'The run has been verified and added to the leaderboard.' });
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to approve run', variant: 'destructive' });
@@ -54,11 +67,40 @@ export default function Moderation() {
         status: 'rejected',
         rejectionReason: rejectReason || undefined,
       });
+      await logActivity.mutateAsync({
+        action_type: 'REJECT_RUN',
+        category: 'moderation',
+        description: `Rejected run${rejectReason ? `: ${rejectReason}` : ''}`,
+      });
       toast({ title: 'Run rejected', description: 'The run has been rejected.' });
       setRejectDialog({ open: false, runId: null });
       setRejectReason('');
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to reject run', variant: 'destructive' });
+    }
+  };
+
+  const handleBan = async () => {
+    if (!banDialog.userId) return;
+    
+    try {
+      await banUser.mutateAsync({
+        user_id: banDialog.userId,
+        reason: banReason || undefined,
+        duration_hours: parseInt(banDuration),
+      });
+      await logActivity.mutateAsync({
+        action_type: 'BAN_USER',
+        category: 'bans',
+        description: `Banned ${banDialog.username} for ${banDuration} hours${banReason ? `: ${banReason}` : ''}`,
+        target_user_id: banDialog.userId,
+      });
+      toast({ title: 'User banned', description: `${banDialog.username} has been banned for ${banDuration} hours.` });
+      setBanDialog({ open: false, userId: null, username: '' });
+      setBanReason('');
+      setBanDuration('24');
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to ban user', variant: 'destructive' });
     }
   };
 
@@ -112,8 +154,22 @@ export default function Moderation() {
                             {run.profiles?.username?.charAt(0).toUpperCase() || '?'}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
+                        <div className="flex-1">
                           <p className="font-medium">{run.profiles?.username}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {run.categories?.gamemodes?.name} - {run.categories?.name}
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                          onClick={() => setBanDialog({ open: true, userId: run.user_id, username: run.profiles?.username || 'User' })}
+                        >
+                          <Ban className="h-4 w-4 mr-1" />
+                          Ban
+                        </Button>
+                      </div>
                           <p className="text-sm text-muted-foreground">
                             {run.categories?.gamemodes?.name} - {run.categories?.name}
                           </p>
@@ -154,7 +210,7 @@ export default function Moderation() {
                       
                       <div className="flex gap-2">
                         <Button
-                          onClick={() => handleApprove(run.id)}
+                          onClick={() => handleApprove(run.id, run.profiles?.username || 'Unknown')}
                           disabled={verifyRun.isPending}
                           className="bg-green-600 hover:bg-green-700"
                         >
@@ -214,6 +270,52 @@ export default function Moderation() {
               <Button variant="destructive" onClick={handleReject} disabled={verifyRun.isPending}>
                 {verifyRun.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Reject Run
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Ban Dialog */}
+        <Dialog open={banDialog.open} onOpenChange={(open) => setBanDialog({ open, userId: open ? banDialog.userId : null, username: open ? banDialog.username : '' })}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Ban className="h-5 w-5 text-destructive" />
+                Ban User: {banDialog.username}
+              </DialogTitle>
+              <DialogDescription>
+                Temporarily ban this user from submitting runs.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Duration</label>
+                <Select value={banDuration} onValueChange={setBanDuration}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 hour</SelectItem>
+                    <SelectItem value="6">6 hours</SelectItem>
+                    <SelectItem value="24">24 hours</SelectItem>
+                    <SelectItem value="72">3 days</SelectItem>
+                    <SelectItem value="168">1 week</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Input
+                placeholder="Reason for ban (optional)"
+                value={banReason}
+                onChange={(e) => setBanReason(e.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setBanDialog({ open: false, userId: null, username: '' })}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleBan} disabled={banUser.isPending}>
+                {banUser.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Ban User
               </Button>
             </DialogFooter>
           </DialogContent>

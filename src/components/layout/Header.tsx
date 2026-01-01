@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Trophy, Gamepad2, User, LogOut, Shield, Menu, Play } from 'lucide-react';
+import { Trophy, Gamepad2, User, LogOut, Shield, Menu, Play, Crown } from 'lucide-react';
 import { useState } from 'react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
@@ -92,6 +92,14 @@ export function Header() {
                       <Link to="/moderation" className="flex items-center gap-2">
                         <Shield className="h-4 w-4 text-accent" />
                         Moderation
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {roleData?.isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="flex items-center gap-2">
+                        <Crown className="h-4 w-4 text-amber-500" />
+                        Dev Panel
                       </Link>
                     </DropdownMenuItem>
                   )}
