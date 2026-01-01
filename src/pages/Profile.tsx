@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { RoleAvatar } from '@/components/profile/RoleAvatar';
 import { RoleBadge } from '@/components/profile/RoleBadge';
+import { AvatarUpload } from '@/components/profile/AvatarUpload';
 import { User, Trophy, Clock, Calendar, CheckCircle, XCircle, AlertCircle, ArrowLeft, ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
@@ -100,12 +101,24 @@ export default function Profile() {
         <Card className="mb-8">
           <CardContent className="p-8">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-              <RoleAvatar 
-                username={profile.username}
-                avatarUrl={profile.avatar_url}
-                roles={roles}
-                size="lg"
-              />
+              {isOwnProfile ? (
+                <div className="relative role-ring-wrapper">
+                  <div className={roles.includes('admin') ? 'role-ring-dev' : roles.includes('moderator') ? 'role-ring-mod' : ''}>
+                    <AvatarUpload
+                      currentAvatarUrl={profile.avatar_url}
+                      username={profile.username}
+                      size="lg"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <RoleAvatar 
+                  username={profile.username}
+                  avatarUrl={profile.avatar_url}
+                  roles={roles}
+                  size="lg"
+                />
+              )}
               
               <div className="flex-1 text-center sm:text-left">
                 <div className="flex items-center gap-2 justify-center sm:justify-start mb-2">
