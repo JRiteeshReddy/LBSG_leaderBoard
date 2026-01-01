@@ -170,11 +170,6 @@ export default function Moderation() {
                           Ban
                         </Button>
                       </div>
-                          <p className="text-sm text-muted-foreground">
-                            {run.categories?.gamemodes?.name} - {run.categories?.name}
-                          </p>
-                        </div>
-                      </div>
 
                       <div className="flex flex-wrap items-center gap-4 mb-3">
                         <Badge variant="secondary" className="text-lg font-display">
