@@ -109,6 +109,51 @@ $$;
 SET default_table_access_method = heap;
 
 --
+-- Name: activity_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.activity_logs (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    action_type text NOT NULL,
+    category text NOT NULL,
+    description text NOT NULL,
+    performed_by uuid NOT NULL,
+    target_user_id uuid,
+    metadata jsonb DEFAULT '{}'::jsonb,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: announcements; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.announcements (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    title text NOT NULL,
+    content text NOT NULL,
+    created_by uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: bans; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.bans (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    banned_by uuid NOT NULL,
+    reason text,
+    is_permanent boolean DEFAULT false NOT NULL,
+    expires_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
 -- Name: categories; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -189,6 +234,30 @@ CREATE TABLE public.user_roles (
 
 
 --
+-- Name: activity_logs activity_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.activity_logs
+    ADD CONSTRAINT activity_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: announcements announcements_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.announcements
+    ADD CONSTRAINT announcements_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bans bans_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bans
+    ADD CONSTRAINT bans_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: categories categories_gamemode_id_slug_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -261,10 +330,85 @@ ALTER TABLE ONLY public.user_roles
 
 
 --
+-- Name: idx_activity_logs_category; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_activity_logs_category ON public.activity_logs USING btree (category);
+
+
+--
+-- Name: idx_activity_logs_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_activity_logs_created_at ON public.activity_logs USING btree (created_at DESC);
+
+
+--
+-- Name: idx_bans_expires_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_bans_expires_at ON public.bans USING btree (expires_at);
+
+
+--
+-- Name: idx_bans_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_bans_user_id ON public.bans USING btree (user_id);
+
+
+--
+-- Name: announcements update_announcements_updated_at; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER update_announcements_updated_at BEFORE UPDATE ON public.announcements FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
 -- Name: profiles update_profiles_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+
+--
+-- Name: activity_logs activity_logs_performed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.activity_logs
+    ADD CONSTRAINT activity_logs_performed_by_fkey FOREIGN KEY (performed_by) REFERENCES auth.users(id);
+
+
+--
+-- Name: activity_logs activity_logs_target_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.activity_logs
+    ADD CONSTRAINT activity_logs_target_user_id_fkey FOREIGN KEY (target_user_id) REFERENCES auth.users(id);
+
+
+--
+-- Name: announcements announcements_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.announcements
+    ADD CONSTRAINT announcements_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id);
+
+
+--
+-- Name: bans bans_banned_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bans
+    ADD CONSTRAINT bans_banned_by_fkey FOREIGN KEY (banned_by) REFERENCES auth.users(id);
+
+
+--
+-- Name: bans bans_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bans
+    ADD CONSTRAINT bans_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
 
 
 --
@@ -351,6 +495,13 @@ CREATE POLICY "Admins can view all roles" ON public.user_roles FOR SELECT TO aut
 
 
 --
+-- Name: announcements Anyone can view announcements; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Anyone can view announcements" ON public.announcements FOR SELECT USING (true);
+
+
+--
 -- Name: runs Anyone can view approved runs; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -386,10 +537,52 @@ CREATE POLICY "Authenticated users can submit runs" ON public.runs FOR INSERT TO
 
 
 --
+-- Name: bans Devs can delete bans; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Devs can delete bans" ON public.bans FOR DELETE USING (public.has_role(auth.uid(), 'admin'::public.app_role));
+
+
+--
+-- Name: announcements Devs can manage announcements; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Devs can manage announcements" ON public.announcements USING (public.has_role(auth.uid(), 'admin'::public.app_role));
+
+
+--
+-- Name: activity_logs Devs can view all activity logs; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Devs can view all activity logs" ON public.activity_logs FOR SELECT USING (public.has_role(auth.uid(), 'admin'::public.app_role));
+
+
+--
 -- Name: runs Moderators can update runs; Type: POLICY; Schema: public; Owner: -
 --
 
 CREATE POLICY "Moderators can update runs" ON public.runs FOR UPDATE TO authenticated USING ((public.has_role(auth.uid(), 'moderator'::public.app_role) OR public.has_role(auth.uid(), 'admin'::public.app_role)));
+
+
+--
+-- Name: activity_logs Mods and devs can insert logs; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Mods and devs can insert logs" ON public.activity_logs FOR INSERT WITH CHECK ((public.has_role(auth.uid(), 'moderator'::public.app_role) OR public.has_role(auth.uid(), 'admin'::public.app_role)));
+
+
+--
+-- Name: bans Mods and devs can view all bans; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Mods and devs can view all bans" ON public.bans FOR SELECT USING ((public.has_role(auth.uid(), 'moderator'::public.app_role) OR public.has_role(auth.uid(), 'admin'::public.app_role)));
+
+
+--
+-- Name: bans Mods can create temporary bans; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY "Mods can create temporary bans" ON public.bans FOR INSERT WITH CHECK ((public.has_role(auth.uid(), 'moderator'::public.app_role) OR public.has_role(auth.uid(), 'admin'::public.app_role)));
 
 
 --
@@ -412,6 +605,24 @@ CREATE POLICY "Users can update own pending runs" ON public.runs FOR UPDATE TO a
 
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING ((auth.uid() = id));
 
+
+--
+-- Name: activity_logs; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: announcements; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: bans; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.bans ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: categories; Type: ROW SECURITY; Schema: public; Owner: -
