@@ -8,6 +8,14 @@ import { useBans, useUnbanUser } from '@/hooks/useBans';
 import { useAnnouncements, useCreateAnnouncement, useDeleteAnnouncement } from '@/hooks/useAnnouncements';
 import { useAllUsers, useAssignRole, useRemoveRole } from '@/hooks/useUserManagement';
 import { useGamemodes } from '@/hooks/useGamemodes';
+import { 
+  useCreateGamemode, 
+  useUpdateGamemode, 
+  useDeleteGamemode,
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory 
+} from '@/hooks/useGamemodeManagement';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -17,12 +25,14 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { RoleAvatar } from '@/components/profile/RoleAvatar';
 import { RoleBadge } from '@/components/profile/RoleBadge';
 import { 
   Shield, Crown, Users, ScrollText, Megaphone, 
   Gamepad2, Plus, Trash2, UserPlus, UserMinus, Ban, 
-  Clock, Filter, Loader2
+  Clock, Filter, Loader2, ChevronDown, ChevronRight, FolderPlus, Edit
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
@@ -452,6 +462,119 @@ function AnnouncementsTab() {
 
 function CategoriesTab() {
   const { data: gamemodes, isLoading } = useGamemodes();
+  const createGamemode = useCreateGamemode();
+  const updateGamemode = useUpdateGamemode();
+  const deleteGamemode = useDeleteGamemode();
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategory();
+  const deleteCategory = useDeleteCategory();
+  
+  const [gamemodeDialogOpen, setGamemodeDialogOpen] = useState(false);
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [selectedGamemodeId, setSelectedGamemodeId] = useState<string | null>(null);
+  const [expandedGamemodes, setExpandedGamemodes] = useState<string[]>([]);
+  
+  // Gamemode form state
+  const [gamemodeName, setGamemodeName] = useState('');
+  const [gamemodeSlug, setGamemodeSlug] = useState('');
+  const [gamemodeDescription, setGamemodeDescription] = useState('');
+  const [gamemodeIcon, setGamemodeIcon] = useState('');
+  
+  // Category form state
+  const [categoryName, setCategoryName] = useState('');
+  const [categorySlug, setCategorySlug] = useState('');
+  const [categoryDescription, setCategoryDescription] = useState('');
+  const [categoryRules, setCategoryRules] = useState('');
+  const [categoryMetricType, setCategoryMetricType] = useState<'time' | 'count' | 'score'>('time');
+  const [categoryDifficulty, setCategoryDifficulty] = useState('Medium');
+  
+  const toggleExpanded = (id: string) => {
+    setExpandedGamemodes(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+  
+  const generateSlug = (name: string) => {
+    return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  };
+  
+  const handleCreateGamemode = async () => {
+    try {
+      await createGamemode.mutateAsync({
+        name: gamemodeName,
+        slug: gamemodeSlug || generateSlug(gamemodeName),
+        description: gamemodeDescription || undefined,
+        icon: gamemodeIcon || undefined,
+      });
+      toast.success('Gamemode created successfully');
+      setGamemodeDialogOpen(false);
+      resetGamemodeForm();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+  
+  const handleCreateCategory = async () => {
+    if (!selectedGamemodeId) return;
+    try {
+      await createCategory.mutateAsync({
+        gamemode_id: selectedGamemodeId,
+        name: categoryName,
+        slug: categorySlug || generateSlug(categoryName),
+        description: categoryDescription || undefined,
+        rules: categoryRules || undefined,
+        metric_type: categoryMetricType,
+        difficulty: categoryDifficulty,
+      });
+      toast.success('Category created successfully');
+      setCategoryDialogOpen(false);
+      resetCategoryForm();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+  
+  const handleDeleteGamemode = async (id: string) => {
+    if (!confirm('Are you sure? This will delete all categories under this gamemode.')) return;
+    try {
+      await deleteGamemode.mutateAsync(id);
+      toast.success('Gamemode deleted');
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+  
+  const handleDeleteCategory = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this category?')) return;
+    try {
+      await deleteCategory.mutateAsync(id);
+      toast.success('Category deleted');
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+  
+  const resetGamemodeForm = () => {
+    setGamemodeName('');
+    setGamemodeSlug('');
+    setGamemodeDescription('');
+    setGamemodeIcon('');
+  };
+  
+  const resetCategoryForm = () => {
+    setCategoryName('');
+    setCategorySlug('');
+    setCategoryDescription('');
+    setCategoryRules('');
+    setCategoryMetricType('time');
+    setCategoryDifficulty('Medium');
+    setSelectedGamemodeId(null);
+  };
+  
+  const openCategoryDialog = (gamemodeId: string) => {
+    setSelectedGamemodeId(gamemodeId);
+    setCategoryDialogOpen(true);
+  };
   
   return (
     <Card>
@@ -460,37 +583,263 @@ function CategoriesTab() {
           <Gamepad2 className="h-5 w-5" />
           Categories Management
         </CardTitle>
-        <Button size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          New Category
-        </Button>
+        <Dialog open={gamemodeDialogOpen} onOpenChange={setGamemodeDialogOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              New Gamemode
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Gamemode</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="gm-name">Name *</Label>
+                <Input 
+                  id="gm-name"
+                  placeholder="e.g. SkyWars" 
+                  value={gamemodeName} 
+                  onChange={(e) => {
+                    setGamemodeName(e.target.value);
+                    if (!gamemodeSlug) setGamemodeSlug(generateSlug(e.target.value));
+                  }} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="gm-slug">Slug</Label>
+                <Input 
+                  id="gm-slug"
+                  placeholder="skywars" 
+                  value={gamemodeSlug} 
+                  onChange={(e) => setGamemodeSlug(e.target.value)} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="gm-description">Description</Label>
+                <Textarea 
+                  id="gm-description"
+                  placeholder="Description of the gamemode" 
+                  value={gamemodeDescription} 
+                  onChange={(e) => setGamemodeDescription(e.target.value)}
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="gm-icon">Icon (emoji or icon name)</Label>
+                <Input 
+                  id="gm-icon"
+                  placeholder="⚔️" 
+                  value={gamemodeIcon} 
+                  onChange={(e) => setGamemodeIcon(e.target.value)} 
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button 
+                onClick={handleCreateGamemode} 
+                disabled={!gamemodeName || createGamemode.isPending}
+              >
+                {createGamemode.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Create Gamemode
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardHeader>
       <CardContent>
+        {/* Category Creation Dialog */}
+        <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Category</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="cat-name">Name *</Label>
+                <Input 
+                  id="cat-name"
+                  placeholder="e.g. Fastest Kill" 
+                  value={categoryName} 
+                  onChange={(e) => {
+                    setCategoryName(e.target.value);
+                    if (!categorySlug) setCategorySlug(generateSlug(e.target.value));
+                  }} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cat-slug">Slug</Label>
+                <Input 
+                  id="cat-slug"
+                  placeholder="fastest-kill" 
+                  value={categorySlug} 
+                  onChange={(e) => setCategorySlug(e.target.value)} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cat-description">Description</Label>
+                <Textarea 
+                  id="cat-description"
+                  placeholder="Description of the category" 
+                  value={categoryDescription} 
+                  onChange={(e) => setCategoryDescription(e.target.value)}
+                  rows={2}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cat-rules">Rules</Label>
+                <Textarea 
+                  id="cat-rules"
+                  placeholder="Category rules and requirements" 
+                  value={categoryRules} 
+                  onChange={(e) => setCategoryRules(e.target.value)}
+                  rows={2}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Metric Type</Label>
+                  <Select value={categoryMetricType} onValueChange={(v: 'time' | 'count' | 'score') => setCategoryMetricType(v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="time">Time</SelectItem>
+                      <SelectItem value="count">Count</SelectItem>
+                      <SelectItem value="score">Score</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Difficulty</Label>
+                  <Select value={categoryDifficulty} onValueChange={setCategoryDifficulty}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Easy">Easy</SelectItem>
+                      <SelectItem value="Medium">Medium</SelectItem>
+                      <SelectItem value="Hard">Hard</SelectItem>
+                      <SelectItem value="Expert">Expert</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button 
+                onClick={handleCreateCategory} 
+                disabled={!categoryName || !selectedGamemodeId || createCategory.isPending}
+              >
+                {createCategory.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Create Category
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 rounded-lg" />)}
           </div>
-        ) : (
+        ) : gamemodes && gamemodes.length > 0 ? (
           <div className="space-y-3">
-            {gamemodes?.map((gm: any) => (
-              <div key={gm.id} className="p-4 rounded-lg bg-secondary border border-border">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold">{gm.name}</h3>
-                    <p className="text-sm text-muted-foreground">{gm.description}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {gm.categories?.length || 0} categories
-                    </p>
+            {gamemodes.map((gm: any) => (
+              <Collapsible 
+                key={gm.id} 
+                open={expandedGamemodes.includes(gm.id)}
+                onOpenChange={() => toggleExpanded(gm.id)}
+              >
+                <div className="p-4 rounded-lg bg-secondary border border-border">
+                  <div className="flex items-center justify-between">
+                    <CollapsibleTrigger className="flex items-center gap-3 flex-1 text-left">
+                      {expandedGamemodes.includes(gm.id) ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          {gm.icon && <span className="text-lg">{gm.icon}</span>}
+                          <h3 className="font-semibold">{gm.name}</h3>
+                          <Badge variant="outline">{gm.categories?.length || 0} categories</Badge>
+                        </div>
+                        {gm.description && (
+                          <p className="text-sm text-muted-foreground">{gm.description}</p>
+                        )}
+                      </div>
+                    </CollapsibleTrigger>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openCategoryDialog(gm.id);
+                        }}
+                      >
+                        <FolderPlus className="h-4 w-4 mr-1" />
+                        Add Category
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteGamemode(gm.id);
+                        }}
+                        disabled={deleteGamemode.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">Edit</Button>
-                    <Button variant="destructive" size="sm">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  
+                  <CollapsibleContent className="mt-4 space-y-2">
+                    {gm.categories && gm.categories.length > 0 ? (
+                      gm.categories.map((cat: any) => (
+                        <div 
+                          key={cat.id} 
+                          className="p-3 rounded-md bg-card border border-border flex items-center justify-between ml-7"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{cat.name}</p>
+                              <Badge variant="secondary" className="text-xs">
+                                {cat.metric_type}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {cat.difficulty}
+                              </Badge>
+                            </div>
+                            {cat.description && (
+                              <p className="text-sm text-muted-foreground">{cat.description}</p>
+                            )}
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleDeleteCategory(cat.id)}
+                            disabled={deleteCategory.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground ml-7">No categories yet. Add one!</p>
+                    )}
+                  </CollapsibleContent>
                 </div>
-              </div>
+              </Collapsible>
             ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            <Gamepad2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No gamemodes yet</p>
+            <p className="text-sm">Create your first gamemode to get started</p>
           </div>
         )}
       </CardContent>
