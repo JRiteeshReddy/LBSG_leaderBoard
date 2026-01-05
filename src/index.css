@@ -2,66 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LifeBoat Leaderboards - Light theme with balanced red and blue */
+/* LifeBoat Leaderboards - Dark Minecraft-themed design */
 
 @layer base {
   :root {
-    /* White/light backgrounds */
-    --background: 0 0% 100%;
-    --foreground: 220 20% 15%;
+    /* Dark backgrounds */
+    --background: 220 25% 10%;
+    --foreground: 210 20% 95%;
     
-    --card: 0 0% 100%;
-    --card-foreground: 220 20% 15%;
+    --card: 220 20% 14%;
+    --card-foreground: 210 20% 95%;
     
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 15%;
+    --popover: 220 20% 12%;
+    --popover-foreground: 210 20% 95%;
     
-    /* Blue as primary */
-    --primary: 210 100% 45%;
+    /* Green as primary (Minecraft grass) */
+    --primary: 120 60% 45%;
     --primary-foreground: 0 0% 100%;
     
-    /* Light gray for secondary surfaces */
-    --secondary: 220 15% 95%;
-    --secondary-foreground: 220 20% 20%;
+    /* Darker surfaces */
+    --secondary: 220 20% 18%;
+    --secondary-foreground: 210 20% 90%;
     
-    --muted: 220 15% 92%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 220 15% 20%;
+    --muted-foreground: 210 10% 60%;
     
-    /* Red as accent */
-    --accent: 0 85% 50%;
+    /* Sky blue as accent */
+    --accent: 200 80% 55%;
     --accent-foreground: 0 0% 100%;
     
-    --destructive: 0 85% 50%;
+    --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 220 15% 88%;
-    --input: 220 15% 88%;
-    --ring: 210 100% 45%;
+    --border: 220 15% 22%;
+    --input: 220 15% 22%;
+    --ring: 120 60% 45%;
     
     --radius: 0.375rem;
     
-    /* Custom semantic colors - blue and red */
-    --color-blue: 210 100% 45%;
-    --color-blue-light: 210 100% 55%;
-    --color-blue-dark: 210 100% 35%;
-    --color-red: 0 85% 50%;
-    --color-red-light: 0 85% 60%;
-    --color-red-dark: 0 85% 40%;
+    /* Custom semantic colors - green and sky blue */
+    --color-blue: 200 80% 55%;
+    --color-blue-light: 200 80% 65%;
+    --color-blue-dark: 200 80% 45%;
+    --color-red: 0 70% 50%;
+    --color-red-light: 0 70% 60%;
+    --color-red-dark: 0 70% 40%;
     
     /* Rank colors */
-    --rank-gold: 45 90% 45%;
-    --rank-silver: 220 10% 55%;
-    --rank-bronze: 30 60% 45%;
+    --rank-gold: 45 90% 55%;
+    --rank-silver: 220 10% 65%;
+    --rank-bronze: 30 60% 50%;
     
     /* Sidebar */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 20% 15%;
-    --sidebar-primary: 210 100% 45%;
+    --sidebar-background: 220 20% 12%;
+    --sidebar-foreground: 210 20% 95%;
+    --sidebar-primary: 120 60% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 95%;
-    --sidebar-accent-foreground: 220 20% 20%;
-    --sidebar-border: 220 15% 88%;
-    --sidebar-ring: 210 100% 45%;
+    --sidebar-accent: 220 20% 18%;
+    --sidebar-accent-foreground: 210 20% 90%;
+    --sidebar-border: 220 15% 22%;
+    --sidebar-ring: 120 60% 45%;
   }
 }
 
